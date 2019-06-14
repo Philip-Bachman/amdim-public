@@ -15,7 +15,7 @@ Exemplar [1]            | 46.0            | 42.7
 Patch Offset [1]        | 51.4            | 45.3 
 Jigsaw [1]              | 44.6            | 42.2
 CPC [1]                 | 48.7            | n/a
-**AMDIM**               | **60.2**        | **50.0**
+**AMDIM**               | **66.2**        | **50.0**
 
 > [1]: Results from [Kolesnikov et al. [2019]](https://arxiv.org/abs/1906.00910). 
 
