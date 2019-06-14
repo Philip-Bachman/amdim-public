@@ -6,7 +6,7 @@
 Our paper describing AMDIM is available at: https://arxiv.org/abs/1906.00910.
 
 ### Main Results 
-Results of AMDIM compared to other methods when evaluating accuracy of linear logistic regression that is trained on top of representations provided by self-supervised models.
+Results of AMDIM compared to other methods when evaluating accuracy using a linear classifier trained on top of representations provided by the self-supervised encoder.
 
 Method                  | ImageNet        | Places205
 ------------------------| :-------------: | :----------------:
