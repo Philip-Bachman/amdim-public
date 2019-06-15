@@ -5,6 +5,9 @@
 
 Our paper describing AMDIM is available at: https://arxiv.org/abs/1906.00910.
 
+## Note
+We are in the process of cleaning-up and porting over code from our working repo, which is still in flux, so performance of models from this repo will be variable for a little while. We will add checkpoints for some strong models trained on ImageNet via self-supervision. Also, contact me (Phil) for help with adding the 3rd-party data augmentation -- it's pretty quick to get working.
+
 ### Main Results 
 Results of AMDIM compared to other methods when evaluating accuracy using a linear classifier trained on top of representations provided by the self-supervised encoder:
 
