@@ -33,6 +33,7 @@ parser.add_argument('--n_rkhs', type=int, default=1024,
 parser.add_argument('--tclip', type=float, default=20.0,
                     help='soft clipping value for NCE scores')
 parser.add_argument('--res_depth', type=int, default=3)
+parser.add_argument('--use_bn', type=int, default=0)
 
 
 # parameters for output, logging, checkpointing, etc
@@ -74,7 +75,8 @@ def main():
     torch_device = torch.device('cuda')
     # create new model with random parameters
     model = Model(ndf=args.ndf, n_classes=num_classes, n_rkhs=args.n_rkhs,
-                  tclip=args.tclip, res_depth=args.res_depth, dataset=dataset)
+                  tclip=args.tclip, res_depth=args.res_depth, dataset=dataset,
+                  use_bn=(args.use_bn == 1))
     # restore model parameters from a checkpoint if requested
     checkpoint = \
         Checkpoint(model, args.checkpoint_path, args.output_dir, args.finetune)

@@ -12,7 +12,7 @@ from datasets import Dataset
 
 class Encoder(nn.Module):
     def __init__(self, dummy_batch, nc=3, ndf=64, n_rkhs=512, res_depth=3,
-                 encoder_size=32, use_bn=True):
+                 encoder_size=32, use_bn=False):
         super(Encoder, self).__init__()
         self.nc = nc
         self.ndf = ndf
@@ -32,7 +32,7 @@ class Encoder(nn.Module):
                 ConvResBlock(ndf * 4, ndf * 4, 3, 1, 0, res_depth, use_bn),
                 ConvResBlock(ndf * 4, ndf * 4, 3, 1, 0, res_depth, use_bn),
                 ConvResNxN(ndf * 4, n_rkhs, 3, 1, 0, use_bn),
-                MaybeBatchNorm2d(n_rkhs, True, use_bn)
+                MaybeBatchNorm2d(n_rkhs, True, True)
             ])
         elif encoder_size == 64:
             self.layer_list = nn.ModuleList([
@@ -44,20 +44,20 @@ class Encoder(nn.Module):
                 ConvResBlock(ndf * 8, ndf * 8, 3, 1, 0, res_depth, use_bn),
                 ConvResBlock(ndf * 8, ndf * 8, 3, 1, 0, res_depth, use_bn),
                 ConvResNxN(ndf * 8, n_rkhs, 3, 1, 0, use_bn),
-                MaybeBatchNorm2d(n_rkhs, True, use_bn)
+                MaybeBatchNorm2d(n_rkhs, True, True)
             ])
         elif encoder_size == 128:
             self.layer_list = nn.ModuleList([
                 Conv3x3(nc, ndf, 5, 2, 2, False, pad_mode='reflect'),
                 Conv3x3(ndf, ndf, 3, 1, 0, False),
-                ConvResBlock(ndf * 1, ndf * 2, 4, 2, 0, res_depth, False),
-                ConvResBlock(ndf * 2, ndf * 4, 4, 2, 0, res_depth, False),
-                ConvResBlock(ndf * 4, ndf * 8, 2, 2, 0, res_depth, False),
-                MaybeBatchNorm2d(ndf * 8, True, False),
-                ConvResBlock(ndf * 8, ndf * 8, 3, 1, 0, res_depth, False),
-                ConvResBlock(ndf * 8, ndf * 8, 3, 1, 0, res_depth, False),
-                ConvResNxN(ndf * 8, n_rkhs, 3, 1, 0, False),
-                MaybeBatchNorm2d(n_rkhs, True, use_bn)
+                ConvResBlock(ndf * 1, ndf * 2, 4, 2, 0, res_depth, use_bn),
+                ConvResBlock(ndf * 2, ndf * 4, 4, 2, 0, res_depth, use_bn),
+                ConvResBlock(ndf * 4, ndf * 8, 2, 2, 0, res_depth, use_bn),
+                MaybeBatchNorm2d(ndf * 8, True, use_bn),
+                ConvResBlock(ndf * 8, ndf * 8, 3, 1, 0, res_depth, use_bn),
+                ConvResBlock(ndf * 8, ndf * 8, 3, 1, 0, res_depth, use_bn),
+                ConvResNxN(ndf * 8, n_rkhs, 3, 1, 0, use_bn),
+                MaybeBatchNorm2d(n_rkhs, True, True)
             ])
         else:
             raise RuntimeError("Could not build encoder."
@@ -185,7 +185,7 @@ class Evaluator(nn.Module):
 
 class Model(nn.Module):
     def __init__(self, ndf, n_classes, n_rkhs, tclip=10.,
-                 res_depth=3, use_bn=True, dataset=Dataset.STL10):
+                 res_depth=3, use_bn=False, dataset=Dataset.STL10):
         super(Model, self).__init__()
         self.n_rkhs = n_rkhs
         self.tasks = ('1t5', '1t7', '5t5', '5t7', '7t7')
@@ -432,11 +432,11 @@ class MLPClassifier(nn.Module):
 
 
 class FakeRKHSConvNet(nn.Module):
-    def __init__(self, n_input, n_output, use_bn=True):
+    def __init__(self, n_input, n_output, use_bn=False):
         super(FakeRKHSConvNet, self).__init__()
         self.conv1 = nn.Conv2d(n_input, n_output, kernel_size=1, stride=1,
                                padding=0, bias=False)
-        self.bn1 = MaybeBatchNorm2d(n_output, True, False)
+        self.bn1 = MaybeBatchNorm2d(n_output, True, use_bn)
         self.relu1 = nn.ReLU()
         self.conv2 = nn.Conv2d(n_output, n_output, kernel_size=1, stride=1,
                                padding=0, bias=False)
@@ -468,7 +468,7 @@ class FakeRKHSConvNet(nn.Module):
 
 
 class ConvResNxN(nn.Module):
-    def __init__(self, n_in, n_out, width, stride, pad, use_bn=True):
+    def __init__(self, n_in, n_out, width, stride, pad, use_bn=False):
         super(ConvResNxN, self).__init__()
         self.n_in = n_in
         self.n_out = n_out
