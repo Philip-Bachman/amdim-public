@@ -18,8 +18,8 @@ CPC - big [1]           | 48.7            | n/a
 CPC - huge [2]          | 61.0            | n/a
 **AMDIM**               | **66.2**        | **50.0**
 
-> [1]: Results from [Kolesnikov et al. [2019]](https://arxiv.org/abs/1906.00910). 
-> [2]: Results from [Henaff et al. [2019]](https://arxiv.org/abs/1905.09272). 
+> [1]: Results from [Kolesnikov et al. [2019]](https://arxiv.org/abs/1906.00910).<br/>
+> [2]: Results from [Henaff et al. [2019]](https://arxiv.org/abs/1905.09272).<br/>
 > Note: the Places205 result is from an older, weaker version of our model.
 
 ## Self-Supervised Training
@@ -34,7 +34,6 @@ CUDA_VISIBLE_DEVICES=0,1,2,3 python train.py \
   --tclip 20.0 \
   --res_depth 8 \
   --dataset IN128 \
-  --input_dir /path/to/imagenet \
   --amp
 ```
 

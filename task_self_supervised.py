@@ -27,6 +27,9 @@ def _train(model, optim_inf, scheduler_inf, checkpoint, epochs,
     for pg in optim_raw.param_groups:
         lr_real = pg['lr']
 
+    # IDK, maybe this helps?
+    torch.cuda.empty_cache()
+
     # prepare checkpoint and stats accumulator
     next_epoch, total_updates = checkpoint.get_current_position(fine_tuning=False)
     fast_stats = AverageMeterSet()
@@ -85,6 +88,8 @@ def _train(model, optim_inf, scheduler_inf, checkpoint, epochs,
             total_updates += 1
             epoch_updates += 1
             if (total_updates % 100) == 0:
+                # IDK, maybe this helps?
+                torch.cuda.empty_cache()
                 time_stop = time.time()
                 spu = (time_stop - time_start) / 100.
                 print('Epoch {0:d}, {1:d} updates -- {2:.4f} sec/update'
