@@ -107,7 +107,7 @@ def _train(model, optim_inf, scheduler_inf, checkpoint, epochs,
         # update learning rate
         scheduler_inf.step(epoch)
         test_model(model, test_loader, device,
-                   fast_stats, max_evals=200000, get_bop_lgt=False)
+                   epoch_stats, max_evals=200000, get_bop_lgt=False)
         epoch_str = epoch_stats.pretty_string(ignore=model.tasks)
         diag_str = '{0:d}: {1:s}'.format(epoch, epoch_str)
         print(diag_str)
