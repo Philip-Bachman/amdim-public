@@ -15,7 +15,7 @@ class Dataset(Enum):
     C100 = 2
     STL10 = 3
     IN128 = 4
-    Places205 = 5
+    PLACES205 = 5
 
 
 def get_dataset(dataset_name):
@@ -88,7 +88,7 @@ class TransformsC10:
             transforms.ColorJitter(0.4, 0.4, 0.4, 0.2)], p=0.8)
         img_jitter = transforms.RandomApply([
             RandomTranslateWithReflect(4)], p=0.8)
-        rnd_gray = transforms.RandomGrayscale(p=0.2)
+        rnd_gray = transforms.RandomGrayscale(p=0.25)
         # main transform for self-supervised training
         self.train_transform = transforms.Compose([
             img_jitter,
@@ -122,9 +122,9 @@ class TransformsSTL10:
         # image augmentation functions
         col_jitter = transforms.RandomApply([
             transforms.ColorJitter(0.4, 0.4, 0.4, 0.2)], p=0.8)
-        rnd_gray = transforms.RandomGrayscale(p=0.2)
+        rnd_gray = transforms.RandomGrayscale(p=0.25)
         solo_crop = \
-            transforms.RandomResizedCrop(64, scale=(0.4, 1.0), ratio=(0.75, 1.33),
+            transforms.RandomResizedCrop(64, scale=(0.3, 1.0), ratio=(0.7, 1.4),
                                          interpolation=INTERP)
 
         self.test_transform = transforms.Compose([
@@ -158,7 +158,7 @@ class TransformsImageNet128:
         # image augmentation functions
         self.flip_lr = transforms.RandomHorizontalFlip(p=0.5)
         solo_crop = \
-            transforms.RandomResizedCrop(128, scale=(0.4, 1.0), ratio=(0.7, 1.4),
+            transforms.RandomResizedCrop(128, scale=(0.3, 1.0), ratio=(0.7, 1.4),
                                          interpolation=INTERP)
         col_jitter = transforms.RandomApply([
             transforms.ColorJitter(0.4, 0.4, 0.4, 0.2)], p=0.8)
@@ -236,7 +236,7 @@ def build_dataset(dataset, batch_size, input_dir=None, fine_tuning=True):
         test_transform = train_transform.test_transform
         train_dataset = datasets.ImageFolder(train_dir, train_transform)
         test_dataset = datasets.ImageFolder(val_dir, test_transform)
-    elif dataset == Dataset.Places205:
+    elif dataset == Dataset.PLACES205:
         num_classes = 1000
         train_transform = TransformsImageNet128()
         test_transform = train_transform.test_transform
@@ -269,7 +269,7 @@ def _get_directories(dataset, input_dir):
     if dataset == Dataset.IN128:
         train_dir = os.path.join(input_dir, 'ILSVRC2012_img_train/')
         val_dir = os.path.join(input_dir, 'ILSVRC2012_img_val/')
-    elif dataset == Dataset.Places205:
+    elif dataset == Dataset.PLACES205:
         train_dir = os.path.join(input_dir, 'places205_256_train/')
         val_dir = os.path.join(input_dir, 'places205_256_val/')
     else:

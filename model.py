@@ -312,7 +312,7 @@ class Model(nn.Module):
             return 32
         if dataset == Dataset.STL10:
             return 64
-        if dataset in [Dataset.IN128, Dataset.Places205]:
+        if dataset in [Dataset.IN128, Dataset.PLACES205]:
             return 128
         raise RuntimeError("Couldn't get encoder size, unknown dataset: {}".format(dataset))
 

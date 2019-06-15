@@ -92,7 +92,7 @@ def train_fine_tune(model, learning_rate, dataset, train_loader,
     elif dataset == Dataset.IN128:
         scheduler = MultiStepLR(optimizer, milestones=[15, 25], gamma=0.2)
         epochs = 30
-    elif dataset == Dataset.Places205:
+    elif dataset == Dataset.PLACES205:
         scheduler = MultiStepLR(optimizer, milestones=[7, 12], gamma=0.2)
         epochs = 15
     # retrain the model

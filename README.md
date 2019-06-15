@@ -6,7 +6,7 @@
 Our paper describing AMDIM is available at: https://arxiv.org/abs/1906.00910.
 
 ### Main Results 
-Results of AMDIM compared to other methods when evaluating accuracy using a linear classifier trained on top of representations provided by the self-supervised encoder.
+Results of AMDIM compared to other methods when evaluating accuracy using a linear classifier trained on top of representations provided by the self-supervised encoder:
 
 Method                  | ImageNet        | Places205
 ------------------------| :-------------: | :----------------:
@@ -14,10 +14,13 @@ Rotation [1]            | 55.4            | 48.0
 Exemplar [1]            | 46.0            | 42.7
 Patch Offset [1]        | 51.4            | 45.3 
 Jigsaw [1]              | 44.6            | 42.2
-CPC [1]                 | 48.7            | n/a
+CPC - big [1]           | 48.7            | n/a
+CPC - huge [2]          | 61.0            | n/a
 **AMDIM**               | **66.2**        | **50.0**
 
 > [1]: Results from [Kolesnikov et al. [2019]](https://arxiv.org/abs/1906.00910). 
+> [2]: Results from [Henaff et al. [2019]](https://arxiv.org/abs/1905.09272). 
+> Note: the Places205 result is from an older, weaker version of our model.
 
 ## Self-Supervised Training
 
