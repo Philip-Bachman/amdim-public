@@ -22,7 +22,7 @@ CPC [1]                 | 48.7            | n/a
 ## Self-Supervised Training
 
 
-You should be able to get some good results on ImageNet if you have access to 4 Volta GPUs with: 
+You should be able to get some good results on ImageNet if you have access to 4 Tesla V100 GPUs with: 
 ```
 CUDA_VISIBLE_DEVICES=0,1,2,3 python train.py \
   --ndf 192 \
@@ -35,10 +35,12 @@ CUDA_VISIBLE_DEVICES=0,1,2,3 python train.py \
   --amp
 ```
 
-For GPUs older than Volta generation, you will need to tweak the model size to fit on the available memory of your GPU. The command line above will take about 16GB of memory when running in mixed precision (`--amp`) or ~32GB in FP32. 
+For GPUs older than Volta, you will need to tweak the model size to fit in the available memory. The command above will take about 15GB of memory on device 0, and slightly less on devices 1-3, when running in mixed precision (`--amp`). When running in FP32, memory usage will be significantly higher. 
 
 Results with the data augmentation implemented in this repo will be less than our strongest results
-with equivalent architecture by 1-2%. For our best results, we use augmentation based on the ImageNet policy from the [Fast AutoAugment](https://arxiv.org/abs/1905.00397) paper by Lim et al., as implemented in the repo available at: [https://github.com/kakaobrain/fast-autoaugment](https://github.com/kakaobrain/fast-autoaugment).
+with equivalent architecture by 1-2%. Our strongest results use augmentation based on the ImageNet policy from the [Fast AutoAugment](https://arxiv.org/abs/1905.00397) paper by Lim et al., implemented in the repo available at: [https://github.com/kakaobrain/fast-autoaugment](https://github.com/kakaobrain/fast-autoaugment).
+
+Using the stronger augmentation and an appropriate learning schedule, the command above should produce a bit over 63% accuracy on ImageNet using the online evaluation classifiers.
 
 ## Fine-Tuning
 
