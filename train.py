@@ -36,7 +36,7 @@ parser.add_argument('--res_depth', type=int, default=3)
 
 
 # parameters for output, logging, checkpointing, etc
-parser.add_argument('--output_dir', type=str, default='./',
+parser.add_argument('--output_dir', type=str, default='./runs',
                     help='directory where tensorboard events and checkpoints will be stored')
 parser.add_argument('--input_dir', type=str, default='/mnt/imagenet',
                     help="Input directory for the dataset. Not needed For C10,"
