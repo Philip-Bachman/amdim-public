@@ -19,7 +19,7 @@ Patch Offset [1]        | 51.4            | 45.3
 Jigsaw [1]              | 44.6            | 42.2
 CPC - big [1]           | 48.7            | n/a
 CPC - huge [2]          | 61.0            | n/a
-**AMDIM**               | **66.2**        | **50.0**
+**AMDIM**               | **68.1**        | **55.0**
 
 > [1]: Results from [Kolesnikov et al. [2019]](https://arxiv.org/abs/1906.00910).<br/>
 > [2]: Results from [Henaff et al. [2019]](https://arxiv.org/abs/1905.09272).<br/>
@@ -45,7 +45,7 @@ For GPUs older than Volta, you will need to tweak the model size to fit in the a
 Results with the data augmentation implemented in this repo will be less than our strongest results
 with equivalent architecture by 1-2%. Our strongest results use augmentation based on the ImageNet policy from the [Fast AutoAugment](https://arxiv.org/abs/1905.00397) paper by Lim et al., implemented in the repo available at: [https://github.com/kakaobrain/fast-autoaugment](https://github.com/kakaobrain/fast-autoaugment).
 
-Using the stronger augmentation and an appropriate learning schedule, the command above should produce a bit over 63% accuracy on ImageNet using the online evaluation classifiers.
+Using the stronger augmentation and an appropriate learning schedule, the command above should produce a bit over 63% accuracy on ImageNet using the online evaluation classifiers. With the standard torchvision augmentations the result will drop to a bit over 62%, which is still decent (significantly state-of-the-art, etc.).
 
 ## Fine-Tuning
 
