@@ -44,7 +44,7 @@ For GPUs older than Volta, you will need to tweak the model size to fit in the a
 Results with the data augmentation implemented in this repo will be less than our strongest results
 with equivalent architecture by 1-2%. Our strongest results use augmentation based on the ImageNet policy from the [Fast AutoAugment](https://arxiv.org/abs/1905.00397) paper by Lim et al., implemented in the repo available at: [https://github.com/kakaobrain/fast-autoaugment](https://github.com/kakaobrain/fast-autoaugment).
 
-Using the stronger augmentation and an appropriate learning schedule, the command above should produce a bit over 63% accuracy on ImageNet using the online evaluation classifiers. With the standard torchvision augmentations the result will drop to a bit over 62%, which is still decent (significantly state-of-the-art, easy on the GPUs, makes good coffee, etc.).
+Using the stronger augmentation and an appropriate learning schedule, the command above should produce a bit over 63% accuracy on ImageNet using the online evaluation classifiers. With the standard torchvision augmentations the result will drop to a bit over 62%, which is still decent (significantly state-of-the-art, makes good coffee, etc.).
 
 ## Evaluation Classifiers
 
