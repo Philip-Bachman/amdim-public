@@ -32,7 +32,7 @@ parser.add_argument('--n_rkhs', type=int, default=1024,
                     help='number of dimensions in fake RKHS embeddings')
 parser.add_argument('--tclip', type=float, default=20.0,
                     help='soft clipping value for NCE scores')
-parser.add_argument('--res_depth', type=int, default=3)
+parser.add_argument('--n_depth', type=int, default=3)
 parser.add_argument('--use_bn', type=int, default=0)
 
 
@@ -42,8 +42,12 @@ parser.add_argument('--output_dir', type=str, default='./runs',
 parser.add_argument('--input_dir', type=str, default='/mnt/imagenet',
                     help="Input directory for the dataset. Not needed For C10,"
                     " C100 or STL10 as the data will be automatically downloaded.")
-parser.add_argument('--checkpoint_path', type=str, default='amdim_cpt.pth',
-                    help='Path to the checkpoint to restart from.')
+parser.add_argument('--cpt_load_path', type=str, default='abc.xyz',
+                    help='path from which to load checkpoint (if available)')
+parser.add_argument('--cpt_name', type=str, default='amdim_cpt.pth',
+                    help='name to use for storing checkpoints during training')
+parser.add_argument('--run_name', type=str, default='default_run',
+                    help='name to use for the tensorbaord summary for this run')
 
 args = parser.parse_args()
 
@@ -57,13 +61,16 @@ def main():
     if args.amp:
         mixed_precision.enable_mixed_precision()
 
+    # set the RNG seeds (probably more hidden elsewhere...)
     torch.manual_seed(args.seed)
     torch.cuda.manual_seed(args.seed)
 
+    # get the dataset
     dataset = get_dataset(args.dataset)
 
     # get a helper object for tensorboard logging
-    stat_tracker = StatTracker(log_dir=args.output_dir)
+    log_dir = os.path.join(args.output_dir, args.run_name)
+    stat_tracker = StatTracker(log_dir=log_dir)
 
     # get dataloaders for training and testing
     train_loader, test_loader, num_classes = \
@@ -75,19 +82,16 @@ def main():
     torch_device = torch.device('cuda')
     # create new model with random parameters
     model = Model(ndf=args.ndf, n_classes=num_classes, n_rkhs=args.n_rkhs,
-                  tclip=args.tclip, res_depth=args.res_depth, dataset=dataset,
+                  tclip=args.tclip, n_depth=args.n_depth, dataset=dataset,
                   use_bn=(args.use_bn == 1))
     # restore model parameters from a checkpoint if requested
     checkpoint = \
-        Checkpoint(model, args.checkpoint_path, args.output_dir, args.classifiers)
+        Checkpoint(model, args.cpt_load_path, args.output_dir, args.classifiers)
     model = model.to(torch_device)
 
-    if args.classifiers:
-        # run the classifier training task
-        task = train_classifiers
-    else:
-        # run the self-supervised encoder training task
-        task = train_self_supervised
+    # select which type of training to do
+    task = train_classifiers if args.classifiers else train_self_supervised
+
     # do the real stuff...
     task(model, args.learning_rate, dataset, train_loader,
          test_loader, stat_tracker, checkpoint, args.output_dir, torch_device)

@@ -11,7 +11,7 @@ from datasets import Dataset
 
 
 class Encoder(nn.Module):
-    def __init__(self, dummy_batch, nc=3, ndf=64, n_rkhs=512, res_depth=3,
+    def __init__(self, dummy_batch, nc=3, ndf=64, n_rkhs=512, n_depth=3,
                  encoder_size=32, use_bn=False):
         super(Encoder, self).__init__()
         self.nc = nc
@@ -26,23 +26,23 @@ class Encoder(nn.Module):
             self.layer_list = nn.ModuleList([
                 Conv3x3(nc, ndf, 3, 1, 0, False),
                 ConvResNxN(ndf, ndf, 1, 1, 0, use_bn),
-                ConvResBlock(ndf * 1, ndf * 2, 4, 2, 0, res_depth, use_bn),
-                ConvResBlock(ndf * 2, ndf * 4, 2, 2, 0, res_depth, use_bn),
+                ConvResBlock(ndf * 1, ndf * 2, 4, 2, 0, n_depth, use_bn),
+                ConvResBlock(ndf * 2, ndf * 4, 2, 2, 0, n_depth, use_bn),
                 MaybeBatchNorm2d(ndf * 4, True, use_bn),
-                ConvResBlock(ndf * 4, ndf * 4, 3, 1, 0, res_depth, use_bn),
-                ConvResBlock(ndf * 4, ndf * 4, 3, 1, 0, res_depth, use_bn),
+                ConvResBlock(ndf * 4, ndf * 4, 3, 1, 0, n_depth, use_bn),
+                ConvResBlock(ndf * 4, ndf * 4, 3, 1, 0, n_depth, use_bn),
                 ConvResNxN(ndf * 4, n_rkhs, 3, 1, 0, use_bn),
                 MaybeBatchNorm2d(n_rkhs, True, True)
             ])
         elif encoder_size == 64:
             self.layer_list = nn.ModuleList([
                 Conv3x3(nc, ndf, 3, 1, 0, False),
-                ConvResBlock(ndf * 1, ndf * 2, 4, 2, 0, res_depth, use_bn),
-                ConvResBlock(ndf * 2, ndf * 4, 4, 2, 0, res_depth, use_bn),
-                ConvResBlock(ndf * 4, ndf * 8, 2, 2, 0, res_depth, use_bn),
+                ConvResBlock(ndf * 1, ndf * 2, 4, 2, 0, n_depth, use_bn),
+                ConvResBlock(ndf * 2, ndf * 4, 4, 2, 0, n_depth, use_bn),
+                ConvResBlock(ndf * 4, ndf * 8, 2, 2, 0, n_depth, use_bn),
                 MaybeBatchNorm2d(ndf * 8, True, use_bn),
-                ConvResBlock(ndf * 8, ndf * 8, 3, 1, 0, res_depth, use_bn),
-                ConvResBlock(ndf * 8, ndf * 8, 3, 1, 0, res_depth, use_bn),
+                ConvResBlock(ndf * 8, ndf * 8, 3, 1, 0, n_depth, use_bn),
+                ConvResBlock(ndf * 8, ndf * 8, 3, 1, 0, n_depth, use_bn),
                 ConvResNxN(ndf * 8, n_rkhs, 3, 1, 0, use_bn),
                 MaybeBatchNorm2d(n_rkhs, True, True)
             ])
@@ -50,18 +50,18 @@ class Encoder(nn.Module):
             self.layer_list = nn.ModuleList([
                 Conv3x3(nc, ndf, 5, 2, 2, False, pad_mode='reflect'),
                 Conv3x3(ndf, ndf, 3, 1, 0, False),
-                ConvResBlock(ndf * 1, ndf * 2, 4, 2, 0, res_depth, use_bn),
-                ConvResBlock(ndf * 2, ndf * 4, 4, 2, 0, res_depth, use_bn),
-                ConvResBlock(ndf * 4, ndf * 8, 2, 2, 0, res_depth, use_bn),
+                ConvResBlock(ndf * 1, ndf * 2, 4, 2, 0, n_depth, use_bn),
+                ConvResBlock(ndf * 2, ndf * 4, 4, 2, 0, n_depth, use_bn),
+                ConvResBlock(ndf * 4, ndf * 8, 2, 2, 0, n_depth, use_bn),
                 MaybeBatchNorm2d(ndf * 8, True, use_bn),
-                ConvResBlock(ndf * 8, ndf * 8, 3, 1, 0, res_depth, use_bn),
-                ConvResBlock(ndf * 8, ndf * 8, 3, 1, 0, res_depth, use_bn),
+                ConvResBlock(ndf * 8, ndf * 8, 3, 1, 0, n_depth, use_bn),
+                ConvResBlock(ndf * 8, ndf * 8, 3, 1, 0, n_depth, use_bn),
                 ConvResNxN(ndf * 8, n_rkhs, 3, 1, 0, use_bn),
                 MaybeBatchNorm2d(n_rkhs, True, True)
             ])
         else:
             raise RuntimeError("Could not build encoder."
-                               "Encoder size {} is not support".format(encoder_size))
+                               "Encoder size {} is not supported".format(encoder_size))
         self._config_modules(dummy_batch, [1, 5, 7], n_rkhs, use_bn)
 
     def init_weights(self, init_scale=1.):
@@ -133,59 +133,40 @@ class Encoder(nn.Module):
 
 
 class Evaluator(nn.Module):
-    def __init__(self, n_classes, ftr_1=None, ftr_5=None,
-                 dim_1=None, dim_5=None):
+    def __init__(self, n_classes, ftr_1=None, dim_1=None):
         super(Evaluator, self).__init__()
         if ftr_1 is None:
             # rely on provided input feature dimensions
             self.dim_1 = dim_1
-            self.dim_5 = dim_5
         else:
             # infer input feature dimensions from provided features
             self.dim_1 = ftr_1.size(1)
-            self.dim_5 = ftr_5.size(1)
         self.n_classes = n_classes
         self.block_glb_mlp = \
             MLPClassifier(self.dim_1, self.n_classes, n_hidden=1024, p=0.2)
         self.block_glb_lin = \
             MLPClassifier(self.dim_1, self.n_classes, n_hidden=None, p=0.0)
-        self.block_bop_mlp = \
-            MLPClassifier(self.dim_5, self.n_classes, n_hidden=1024, p=0.2)
-        self.block_bop_lin = \
-            MLPClassifier(self.dim_5, self.n_classes, n_hidden=None, p=0.0)
 
-    def forward(self, ftr_1, ftr_5, get_bop_lgt=False):
+    def forward(self, ftr_1):
         '''
         Input:
           ftr_1 : features at 1x1 layer
-          ftr_5 : features at 5x5 layer
-          get_bop_lgt : whether to run BoP feature clasifiers
         Output:
           lgt_glb_mlp: class logits from global features
-          lgt_bop_mlp: class logits from bag-of-patches features
           lgt_glb_lin: class logits from global features
-          lgt_bop_lin: class logits from bag-of-patches features
         '''
         # collect features to feed into classifiers
+        # - always detach() -- send no grad into encoder!
         h_top_cls = flatten(ftr_1).detach()
         # compute predictions
         lgt_glb_mlp = self.block_glb_mlp(h_top_cls)
         lgt_glb_lin = self.block_glb_lin(h_top_cls)
-        if get_bop_lgt:
-            # compute logits for the bag-of-patches features
-            h_bop_cls = flatten(ftr_5.mean(dim=3).mean(dim=2)).detach()
-            lgt_bop_mlp = self.block_bop_mlp(h_bop_cls)
-            lgt_bop_lin = self.block_bop_lin(h_bop_cls)
-        else:
-            # skip computation for the bag-of-patches features
-            lgt_bop_mlp = lgt_glb_mlp.detach()
-            lgt_bop_lin = lgt_glb_lin.detach()
-        return lgt_glb_mlp, lgt_bop_mlp, lgt_glb_lin, lgt_bop_lin
+        return lgt_glb_mlp, lgt_glb_lin
 
 
 class Model(nn.Module):
-    def __init__(self, ndf, n_classes, n_rkhs, tclip=10.,
-                 res_depth=3, use_bn=False, dataset=Dataset.STL10):
+    def __init__(self, ndf, n_classes, n_rkhs, tclip=20.,
+                 n_depth=3, use_bn=False, dataset=Dataset.STL10):
         super(Model, self).__init__()
         self.n_rkhs = n_rkhs
         self.tasks = ('1t5', '1t7', '5t5', '5t7', '7t7')
@@ -195,7 +176,7 @@ class Model(nn.Module):
 
         # encoder that provides multiscale features
         self.encoder = Encoder(dummy_batch, nc=3, ndf=ndf, n_rkhs=n_rkhs,
-                               res_depth=res_depth, encoder_size=encoder_size,
+                               n_depth=n_depth, encoder_size=encoder_size,
                                use_bn=use_bn)
         rkhs_1, rkhs_5, _ = self.encoder(dummy_batch)
         # convert for multi-gpu use
@@ -205,7 +186,7 @@ class Model(nn.Module):
         self.g2l_loss = LossMultiNCE(tclip=tclip)
 
         # configure modules for classification with self-supervised features
-        self.evaluator = Evaluator(n_classes, ftr_1=rkhs_1, ftr_5=rkhs_5)
+        self.evaluator = Evaluator(n_classes, ftr_1=rkhs_1)
 
         # gather lists of self-supervised and classifier modules
         self.info_modules = [self.encoder.module, self.g2l_loss]
@@ -230,39 +211,34 @@ class Model(nn.Module):
             self.train()
         return maybe_half(rkhs_1), maybe_half(rkhs_5), maybe_half(rkhs_7)
 
-    def reset_evaluator(self):
+    def reset_evaluator(self, n_classes=None):
         '''
-        Reset the evaluator module, e.g. to retrain for "final evaluation".
+        Reset the evaluator module, e.g. to apply encoder on new data.
+        - evaluator is reset to have n_classes classes (if given)
         '''
         dim_1 = self.evaluator.dim_1
-        dim_5 = self.evaluator.dim_5
-        n_classes = self.evaluator.n_classes
-        self.evaluator = Evaluator(n_classes, dim_1=dim_1, dim_5=dim_5)
+        if n_classes is None:
+            n_classes = self.evaluator.n_classes
+        self.evaluator = Evaluator(n_classes, dim_1=dim_1)
         self.class_modules = [self.evaluator]
         return self.evaluator
 
-    def forward(self, x1, x2, class_only=False, get_bop_lgt=False):
+    def forward(self, x1, x2, class_only=False):
         '''
         Input:
           x1 : images from which to extract features -- x1 ~ A(x)
           x2 : images from which to extract features -- x2 ~ A(x)
-          class_only  : whether we want all outputs for infomax training
-          get_bop_lgt : whether to evaluate big [global; conv] features
+          class_only : whether we want all outputs for infomax training
         Output:
           res_dict : various outputs depending on the task
         '''
         # dict for returning various values
         res_dict = {}
-        # shortcuts for class and viz tasks
         if class_only:
-            # run encoder to get features to feed to classifiers
-            rkhs_1, rkhs_5, _ = \
-                self.encode(x1, no_grad=True)
-            # run classifiers on the features from encoder
-            lgt_glb_mlp, lgt_bop_mlp, lgt_glb_lin, lgt_bop_lin = \
-                self.evaluator(rkhs_1, rkhs_5, get_bop_lgt=get_bop_lgt)
-            res_dict['class'] = [lgt_glb_mlp, lgt_bop_mlp,
-                                 lgt_glb_lin, lgt_bop_lin]
+            # run encoder and classifiers
+            rkhs_1, _, _ = self.encode(x1, no_grad=True)
+            lgt_glb_mlp, lgt_glb_lin = self.evaluator(rkhs_1)
+            res_dict['class'] = [lgt_glb_mlp, lgt_glb_lin]
             res_dict['rkhs_glb'] = flatten(rkhs_1)
             return res_dict
 
@@ -283,6 +259,7 @@ class Model(nn.Module):
         r1_x2, r5_x2, r7_x2 = self.encoder(x2)
 
         # hack for redistributing workload in highly-multi-gpu setting
+        # -- yeah, "highly-multi-gpu" is obviously subjective...
         if has_many_gpus():
             # strip off dummy vals returned by cuda:0
             r1_x1, r5_x1, r7_x1 = r1_x1[1:], r5_x1[1:], r7_x1[1:]
@@ -299,12 +276,8 @@ class Model(nn.Module):
         res_dict['rkhs_glb'] = flatten(r1_x1)
 
         # compute classifier logits for online eval during infomax training
-        lgt_glb_mlp, lgt_bop_mlp, lgt_glb_lin, lgt_bop_lin = \
-            self.evaluator(ftr_1=torch.cat([r1_x1, r1_x2]),
-                           ftr_5=torch.cat([r5_x1, r5_x2]),
-                           get_bop_lgt=get_bop_lgt)
-        res_dict['class'] = [lgt_glb_mlp, lgt_bop_mlp,
-                             lgt_glb_lin, lgt_bop_lin]
+        lgt_glb_mlp, lgt_glb_lin = self.evaluator(ftr_1=torch.cat([r1_x1, r1_x2]))
+        res_dict['class'] = [lgt_glb_mlp, lgt_glb_lin]
         return res_dict
 
     def _get_encoder_size(self, dataset):
@@ -354,11 +327,10 @@ class Conv3x3(nn.Module):
         assert(pad_mode in ['constant', 'reflect'])
         self.n_pad = (n_pad, n_pad, n_pad, n_pad)
         self.pad_mode = pad_mode
-        self.use_bn = use_bn
         self.conv = nn.Conv2d(n_in, n_out, n_kern, n_stride, 0,
                               bias=(not self.use_bn))
         self.relu = nn.ReLU(inplace=True)
-        self.bn = nn.BatchNorm2d(n_out) if self.use_bn else None
+        self.bn = MaybeBatchNorm2d(n_out, True, use_bn)
 
     def forward(self, x):
         if self.n_pad[0] > 0:
@@ -366,9 +338,8 @@ class Conv3x3(nn.Module):
             x = F.pad(x, self.n_pad, mode=self.pad_mode)
         # always apply conv
         x = self.conv(x)
-        if self.use_bn:
-            # maybe apply batchnorm
-            x = self.bn(x)
+        # maybe apply batchnorm
+        x = self.bn(x)
         # always apply relu
         out = self.relu(x)
         return out
@@ -456,11 +427,8 @@ class ConvResNxN(nn.Module):
         if self.n_grow < 0:
             # use self.conv3 to downsample feature dim
             self.conv3 = nn.Conv2d(n_in, n_out, width, stride, pad, bias=True)
-        elif self.n_grow == 0:
-            # self.conv3 is not used when n_out == n_in
-            self.conv3 = None
         else:
-            # use self.conv3 to fill the channels not filled by mean pooling
+            # self.conv3 is not used when n_out >= n_in
             self.conv3 = None
         self.bn1 = MaybeBatchNorm2d(n_out, True, use_bn)
 

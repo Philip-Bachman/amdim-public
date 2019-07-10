@@ -31,7 +31,7 @@ def _train(model, optim_inf, scheduler_inf, checkpoint, epochs,
     torch.cuda.empty_cache()
 
     # prepare checkpoint and stats accumulator
-    next_epoch, total_updates = checkpoint.get_current_position(fine_tuning=False)
+    next_epoch, total_updates = checkpoint.get_current_position()
     fast_stats = AverageMeterSet()
     # run main training loop
     for epoch in range(next_epoch, epochs):
@@ -45,8 +45,8 @@ def _train(model, optim_inf, scheduler_inf, checkpoint, epochs,
             images1 = images1.to(device)
             images2 = images2.to(device)
             # run forward pass through model to get global and local features
-            res_dict = model(x1=images1, x2=images2, class_only=False, get_bop_lgt=False)
-            lgt_glb_mlp, lgt_bop_mlp, lgt_glb_lin, lgt_bop_lin = res_dict['class']
+            res_dict = model(x1=images1, x2=images2, class_only=False)
+            lgt_glb_mlp, lgt_glb_lin = res_dict['class']
             # compute costs for all self-supervised tasks
             loss_g2l = (res_dict['g2l_1t5'] +
                         res_dict['g2l_1t7'] +
@@ -55,9 +55,7 @@ def _train(model, optim_inf, scheduler_inf, checkpoint, epochs,
 
             # compute loss for online evaluation classifiers
             loss_cls = (loss_xent(lgt_glb_mlp, labels) +
-                        loss_xent(lgt_bop_mlp, labels) +
-                        loss_xent(lgt_glb_lin, labels) +
-                        loss_xent(lgt_bop_lin, labels))
+                        loss_xent(lgt_glb_lin, labels))
 
             # do hacky learning rate warmup -- we stop when LR hits lr_real
             if (total_updates < 500):
@@ -81,8 +79,7 @@ def _train(model, optim_inf, scheduler_inf, checkpoint, epochs,
                 'loss_g2l_1t7': res_dict['g2l_1t7'].item(),
                 'loss_g2l_5t5': res_dict['g2l_5t5'].item()
             }, n=1)
-            update_train_accuracies(epoch_stats, labels, lgt_glb_mlp, lgt_bop_mlp,
-                                    lgt_glb_lin, lgt_bop_lin)
+            update_train_accuracies(epoch_stats, labels, lgt_glb_mlp, lgt_glb_lin)
 
             # shortcut diagnostics to deal with long epochs
             total_updates += 1
@@ -99,8 +96,7 @@ def _train(model, optim_inf, scheduler_inf, checkpoint, epochs,
                 # record diagnostics
                 eval_start = time.time()
                 fast_stats = AverageMeterSet()
-                test_model(model, test_loader, device,
-                           fast_stats, max_evals=50000, get_bop_lgt=False)
+                test_model(model, test_loader, device, fast_stats, max_evals=100000)
                 stat_tracker.record_stats(
                     fast_stats.averages(total_updates, prefix='fast/'))
                 eval_time = time.time() - eval_start
@@ -111,15 +107,14 @@ def _train(model, optim_inf, scheduler_inf, checkpoint, epochs,
 
         # update learning rate
         scheduler_inf.step(epoch)
-        test_model(model, test_loader, device,
-                   epoch_stats, max_evals=200000, get_bop_lgt=False)
+        test_model(model, test_loader, device, epoch_stats, max_evals=500000)
         epoch_str = epoch_stats.pretty_string(ignore=model.tasks)
         diag_str = '{0:d}: {1:s}'.format(epoch, epoch_str)
         print(diag_str)
         sys.stdout.flush()
         stat_tracker.record_stats(epoch_stats.averages(epoch, prefix='costs/'))
         # checkpoint the model
-        checkpoint.update(epoch + 1, total_updates, fine_tuning=False)
+        checkpoint.update(epoch + 1, total_updates)
 
 
 def train_self_supervised(model, learning_rate, dataset, train_loader,
@@ -137,9 +132,9 @@ def train_self_supervised(model, learning_rate, dataset, train_loader,
         epochs = 300
     else:
         # best imagenet results use longer schedules...
-        # -- e.g., milestones=[60, 90], epochs=110
-        scheduler = MultiStepLR(optimizer, milestones=[30, 40], gamma=0.2)
-        epochs = 45
+        # -- e.g., milestones=[60, 90], epochs=100
+        scheduler = MultiStepLR(optimizer, milestones=[30, 45], gamma=0.2)
+        epochs = 50
     # train the model
     _train(model, optimizer, scheduler, checkpoint, epochs,
            train_loader, test_loader, stat_tracker, log_dir, device)

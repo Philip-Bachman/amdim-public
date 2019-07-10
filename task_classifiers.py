@@ -18,7 +18,8 @@ from costs import loss_xent
 def _train(model, optimizer, scheduler, epochs, train_loader,
            test_loader, stat_tracker, log_dir, device):
     '''
-    Training loop for classifier evaluation
+    Training loop to train classifiers on top of an encoder with fixed weights.
+    -- e.g., use this for eval or running on new data
     '''
     # If mixed precision is on, will add the necessary hooks into the model and
     # optimizer for half precision conversions
@@ -35,23 +36,18 @@ def _train(model, optimizer, scheduler, epochs, train_loader,
             images2 = images2.to(device)
             labels = labels.to(device)
             # run forward pass through model and collect activations
-            res_dict = model(x1=images1, x2=images2, class_only=True,
-                             get_bop_lgt=False)
-            rkhs_glb = res_dict['rkhs_glb']
-            lgt_glb_mlp, lgt_bop_mlp, lgt_glb_lin, lgt_bop_lin = res_dict['class']
+            res_dict = model(x1=images1, x2=images2, class_only=True)
+            lgt_glb_mlp, lgt_glb_lin = res_dict['class']
             # compute total loss for optimization
             loss = (loss_xent(lgt_glb_mlp, labels) +
-                    loss_xent(lgt_bop_mlp, labels) +
-                    loss_xent(lgt_glb_lin, labels) +
-                    loss_xent(lgt_bop_lin, labels))
+                    loss_xent(lgt_glb_lin, labels))
             # do optimizer step for encoder
             optimizer.zero_grad()
             mixed_precision.backward(loss, optimizer)  # special mixed precision stuff
             optimizer.step()
             # record loss and accuracy on minibatch
             epoch_stats.update('loss', loss.item(), n=1)
-            update_train_accuracies(epoch_stats, labels, lgt_glb_mlp, lgt_bop_mlp,
-                                    lgt_glb_lin, lgt_bop_lin)
+            update_train_accuracies(epoch_stats, labels, lgt_glb_mlp, lgt_glb_lin)
             # shortcut diagnostics to deal with long epochs
             total_updates += 1
             epoch_updates += 1
@@ -65,8 +61,7 @@ def _train(model, optimizer, scheduler, epochs, train_loader,
         # step learning rate scheduler
         scheduler.step(epoch)
         # record diagnostics
-        test_model(model, test_loader, device, epoch_stats,
-                   max_evals=200000, get_bop_lgt=False)
+        test_model(model, test_loader, device, epoch_stats, max_evals=500000)
         epoch_str = epoch_stats.pretty_string(ignore=model.tasks)
         diag_str = '{0:d}: {1:s}'.format(epoch, epoch_str)
         print(diag_str)

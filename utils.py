@@ -6,7 +6,7 @@ import torch.nn.init as init
 from mixed_precision import maybe_half
 
 
-def test_model(model, test_loader, device, stats, max_evals=200000, get_bop_lgt=False):
+def test_model(model, test_loader, device, stats, max_evals=200000):
     '''
     Evaluate accuracy on test set
     '''
@@ -14,6 +14,7 @@ def test_model(model, test_loader, device, stats, max_evals=200000, get_bop_lgt=
     _warmup_batchnorm(model, test_loader, device, batches=50, train_loader=False)
 
     def get_correct_count(lgt_vals, lab_vals):
+        # count how many predictions match the target labels
         max_lgt = torch.max(lgt_vals.cpu().data, 1)[1]
         num_correct = (max_lgt == lab_vals).sum().item()
         return num_correct
@@ -21,9 +22,7 @@ def test_model(model, test_loader, device, stats, max_evals=200000, get_bop_lgt=
     # evaluate model on test_loader
     model.eval()
     correct_glb_mlp = 0.
-    correct_bop_mlp = 0.
     correct_glb_lin = 0.
-    correct_bop_lin = 0.
     total = 0.
     for _, (images, labels) in enumerate(test_loader):
         if total > max_evals:
@@ -31,24 +30,18 @@ def test_model(model, test_loader, device, stats, max_evals=200000, get_bop_lgt=
         images = images.to(device)
         labels = labels.cpu()
         with torch.no_grad():
-            res_dict = model(x1=images, x2=images, class_only=True, get_bop_lgt=get_bop_lgt)
-            lgt_glb_mlp, lgt_bop_mlp, lgt_glb_lin, lgt_bop_lin = res_dict['class']
+            res_dict = model(x1=images, x2=images, class_only=True)
+            lgt_glb_mlp, lgt_glb_lin = res_dict['class']
         # check classification accuracy
         correct_glb_mlp += get_correct_count(lgt_glb_mlp, labels)
-        correct_bop_mlp += get_correct_count(lgt_bop_mlp, labels)
         correct_glb_lin += get_correct_count(lgt_glb_lin, labels)
-        correct_bop_lin += get_correct_count(lgt_bop_lin, labels)
         total += labels.size(0)
     acc_glb_mlp = correct_glb_mlp / total
-    acc_bop_mlp = correct_bop_mlp / total
     acc_glb_lin = correct_glb_lin / total
-    acc_bop_lin = correct_bop_lin / total
     model.train()
     # record stats in the provided stat tracker
     stats.update('test_acc_glb_mlp', acc_glb_mlp, n=1)
-    stats.update('test_acc_bop_mlp', acc_bop_mlp, n=1)
     stats.update('test_acc_glb_lin', acc_glb_lin, n=1)
-    stats.update('test_acc_bop_lin', acc_bop_lin, n=1)
 
 
 def _warmup_batchnorm(model, data_loader, device, batches=100, train_loader=False):
@@ -63,7 +56,7 @@ def _warmup_batchnorm(model, data_loader, device, batches=100, train_loader=Fals
         if train_loader:
             images = images[0]
         images = images.to(device)
-        model(x1=images, x2=images, class_only=True, get_bop_lgt=True)
+        model(x1=images, x2=images, class_only=True)
 
 
 def flatten(x):

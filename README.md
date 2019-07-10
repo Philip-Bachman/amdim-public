@@ -34,7 +34,7 @@ CUDA_VISIBLE_DEVICES=0,1,2,3 python train.py \
   --n_rkhs 1536 \
   --batch_size 480 \
   --tclip 20.0 \
-  --res_depth 8 \
+  --n_depth 8 \
   --dataset IN128 \
   --amp
 ```
@@ -58,7 +58,7 @@ CUDA_VISIBLE_DEVICES=0,1,2,3 python train.py \
   --n_rkhs 1536 \
   --batch_size 480 \
   --tclip 20.0 \
-  --res_depth 8 \
+  --n_depth 8 \
   --dataset Places205 \
   --input_dir /path/to/places205 \
   --amp

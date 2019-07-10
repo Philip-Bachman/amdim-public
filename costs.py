@@ -26,7 +26,7 @@ def loss_xent(logits, labels, ignore_index=-1):
 
 
 class NCE_MI_MULTI(nn.Module):
-    def __init__(self, tclip=10.):
+    def __init__(self, tclip=20.):
         super(NCE_MI_MULTI, self).__init__()
         self.tclip = tclip
 

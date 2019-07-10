@@ -76,23 +76,16 @@ class StatTracker:
         self.writer.add_image(label, image, number)
 
 
-def update_train_accuracies(epoch_stats, labels, lgt_glb_mlp, lgt_bop_mlp,
-                            lgt_glb_lin, lgt_bop_lin):
+def update_train_accuracies(epoch_stats, labels, lgt_glb_mlp, lgt_glb_lin):
     '''
     Helper function for tracking accuracy on training set
     '''
     labels_np = labels.cpu().numpy()
     max_lgt_glb_mlp = torch.max(lgt_glb_mlp.data, 1)[1].cpu().numpy()
-    max_lgt_bop_mlp = torch.max(lgt_bop_mlp.data, 1)[1].cpu().numpy()
     max_lgt_glb_lin = torch.max(lgt_glb_lin.data, 1)[1].cpu().numpy()
-    max_lgt_bop_lin = torch.max(lgt_bop_lin.data, 1)[1].cpu().numpy()
     for j in range(labels_np.shape[0]):
         if labels_np[j] > -0.1:
             hit_glb_mlp = 1 if (max_lgt_glb_mlp[j] == labels_np[j]) else 0
-            hit_bop_mlp = 1 if (max_lgt_bop_mlp[j] == labels_np[j]) else 0
             hit_glb_lin = 1 if (max_lgt_glb_lin[j] == labels_np[j]) else 0
-            hit_bop_lin = 1 if (max_lgt_bop_lin[j] == labels_np[j]) else 0
             epoch_stats.update('train_acc_glb_mlp', hit_glb_mlp, n=1)
-            epoch_stats.update('train_acc_bop_mlp', hit_bop_mlp, n=1)
             epoch_stats.update('train_acc_glb_lin', hit_glb_lin, n=1)
-            epoch_stats.update('train_acc_bop_lin', hit_bop_lin, n=1)

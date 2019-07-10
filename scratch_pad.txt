@@ -1,0 +1,5 @@
+********************************
+** Command for testing on VMs **
+********************************
+
+CUDA_VISIBLE_DEVICES=0,1,2,3 python train.py --ndf 192 --n_rkhs 1536 --batch_size 480 --tclip 20.0 --n_depth 8 --dataset IN128 --amp
