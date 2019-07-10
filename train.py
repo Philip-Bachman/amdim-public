@@ -85,8 +85,7 @@ def main():
                   tclip=args.tclip, n_depth=args.n_depth, dataset=dataset,
                   use_bn=(args.use_bn == 1))
     # restore model parameters from a checkpoint if requested
-    checkpoint = \
-        Checkpoint(model, args.cpt_load_path, args.output_dir, args.classifiers)
+    checkpoint = Checkpoint(model, args.cpt_load_path, args.output_dir)
     model = model.to(torch_device)
 
     # select which type of training to do

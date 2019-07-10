@@ -22,9 +22,9 @@ class Checkpoint():
             'model': self.model.state_dict()
         }
 
-    def _load_cpt(self):
-        if os.path.isfile(self.cpt_load_path):
-            checkpoint = torch.load(self.cpt_load_path)
+    def _load_cpt(self, cpt_load_path):
+        if os.path.isfile(cpt_load_path):
+            checkpoint = torch.load(cpt_load_path)
             self._restore_model(checkpoint)
             self.info_epochs = checkpoint['info_epochs']
             self.info_steps = checkpoint['info_steps']

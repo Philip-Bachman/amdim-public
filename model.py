@@ -327,8 +327,7 @@ class Conv3x3(nn.Module):
         assert(pad_mode in ['constant', 'reflect'])
         self.n_pad = (n_pad, n_pad, n_pad, n_pad)
         self.pad_mode = pad_mode
-        self.conv = nn.Conv2d(n_in, n_out, n_kern, n_stride, 0,
-                              bias=(not self.use_bn))
+        self.conv = nn.Conv2d(n_in, n_out, n_kern, n_stride, 0, bias=use_bn)
         self.relu = nn.ReLU(inplace=True)
         self.bn = MaybeBatchNorm2d(n_out, True, use_bn)
 
