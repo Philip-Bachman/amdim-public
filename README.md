@@ -64,8 +64,8 @@ CUDA_VISIBLE_DEVICES=0,1,2,3 python train.py \
   --amp
 ```
 
-> When restoring from an encoder checkpoint, classifiers will be re-initialized before training again.<br/>
-> This can be used with other datasets if you can endure the pain of figuring out how to load them (one of the greatest challenges in any computer vision project)...<br/>
+* When restoring from an encoder checkpoint, classifiers will be re-initialized before training again.<br/>
+* This can be used with other datasets if you can endure the pain of figuring out how to load them (one of the greatest challenges in any computer vision project)...<br/>
 
 ## Enabling Mixed Precision Training (`--amp`)
 If your GPU supports half precision, you can take advantage of it when training by passing the `--amp` (automatic mixed precision) flag.    
