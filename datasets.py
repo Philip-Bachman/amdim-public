@@ -123,7 +123,7 @@ class TransformsSTL10:
         col_jitter = transforms.RandomApply([
             transforms.ColorJitter(0.4, 0.4, 0.4, 0.2)], p=0.8)
         rnd_gray = transforms.RandomGrayscale(p=0.25)
-        solo_crop = \
+        rand_crop = \
             transforms.RandomResizedCrop(64, scale=(0.3, 1.0), ratio=(0.7, 1.4),
                                          interpolation=INTERP)
 
@@ -135,7 +135,7 @@ class TransformsSTL10:
         ])
 
         self.train_transform = transforms.Compose([
-            solo_crop,
+            rand_crop,
             col_jitter,
             rnd_gray,
             transforms.ToTensor(),
@@ -157,26 +157,24 @@ class TransformsImageNet128:
     def __init__(self):
         # image augmentation functions
         self.flip_lr = transforms.RandomHorizontalFlip(p=0.5)
-        solo_crop = \
+        rand_crop = \
             transforms.RandomResizedCrop(128, scale=(0.3, 1.0), ratio=(0.7, 1.4),
                                          interpolation=INTERP)
         col_jitter = transforms.RandomApply([
-            transforms.ColorJitter(0.4, 0.4, 0.4, 0.2)], p=0.8)
-        rnd_gray = transforms.RandomGrayscale(p=0.2)
+            transforms.ColorJitter(0.4, 0.4, 0.4, 0.1)], p=0.8)
+        rnd_gray = transforms.RandomGrayscale(p=0.25)
         post_transform = transforms.Compose([
             transforms.ToTensor(),
             transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                  std=[0.229, 0.224, 0.225])
         ])
-
         self.test_transform = transforms.Compose([
             transforms.Resize(146, interpolation=INTERP),
             transforms.CenterCrop(128),
             post_transform
         ])
-
         self.train_transform = transforms.Compose([
-            solo_crop,
+            rand_crop,
             col_jitter,
             rnd_gray,
             post_transform
@@ -189,7 +187,7 @@ class TransformsImageNet128:
         return out1, out2
 
 
-def build_dataset(dataset, batch_size, input_dir=None, fine_tuning=True):
+def build_dataset(dataset, batch_size, input_dir=None, labeled_only=False):
 
     train_dir, val_dir = _get_directories(dataset, input_dir)
 
@@ -221,7 +219,7 @@ def build_dataset(dataset, batch_size, input_dir=None, fine_tuning=True):
         num_classes = 10
         train_transform = TransformsSTL10()
         test_transform = train_transform.test_transform
-        train_split = 'train' if fine_tuning else 'train+unlabeled'
+        train_split = 'train' if labeled_only else 'train+unlabeled'
         train_dataset = datasets.STL10(root='/tmp/data/',
                                        split=train_split,
                                        transform=train_transform,

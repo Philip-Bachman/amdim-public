@@ -45,7 +45,7 @@ def _train(model, optim_inf, scheduler_inf, checkpoint, epochs,
             images1 = images1.to(device)
             images2 = images2.to(device)
             # run forward pass through model to get global and local features
-            res_dict = model(x1=images1, x2=images2, fine_tuning=False, get_bop_lgt=False)
+            res_dict = model(x1=images1, x2=images2, class_only=False, get_bop_lgt=False)
             lgt_glb_mlp, lgt_bop_mlp, lgt_glb_lin, lgt_bop_lin = res_dict['class']
             # compute costs for all self-supervised tasks
             loss_g2l = (res_dict['g2l_1t5'] +

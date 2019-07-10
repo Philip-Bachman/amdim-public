@@ -35,7 +35,7 @@ def _train(model, optimizer, scheduler, epochs, train_loader,
             images2 = images2.to(device)
             labels = labels.to(device)
             # run forward pass through model and collect activations
-            res_dict = model(x1=images1, x2=images2, fine_tuning=True,
+            res_dict = model(x1=images1, x2=images2, class_only=True,
                              get_bop_lgt=False)
             rkhs_glb = res_dict['rkhs_glb']
             lgt_glb_mlp, lgt_bop_mlp, lgt_glb_lin, lgt_bop_lin = res_dict['class']
@@ -74,8 +74,8 @@ def _train(model, optimizer, scheduler, epochs, train_loader,
         stat_tracker.record_stats(epoch_stats.averages(epoch, prefix='eval/'))
 
 
-def train_fine_tune(model, learning_rate, dataset, train_loader,
-                    test_loader, stat_tracker, checkpoint, log_dir, device):
+def train_classifiers(model, learning_rate, dataset, train_loader,
+                      test_loader, stat_tracker, checkpoint, log_dir, device):
     # retrain the evaluation classifiers using the trained feature encoder
     for mod in model.class_modules:
         # reset params in the evaluation classifiers

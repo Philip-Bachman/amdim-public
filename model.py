@@ -241,12 +241,12 @@ class Model(nn.Module):
         self.class_modules = [self.evaluator]
         return self.evaluator
 
-    def forward(self, x1, x2, fine_tuning=False, get_bop_lgt=False):
+    def forward(self, x1, x2, class_only=False, get_bop_lgt=False):
         '''
         Input:
           x1 : images from which to extract features -- x1 ~ A(x)
           x2 : images from which to extract features -- x2 ~ A(x)
-          fine_tuning : whether we want all outputs for infomax training
+          class_only  : whether we want all outputs for infomax training
           get_bop_lgt : whether to evaluate big [global; conv] features
         Output:
           res_dict : various outputs depending on the task
@@ -254,7 +254,7 @@ class Model(nn.Module):
         # dict for returning various values
         res_dict = {}
         # shortcuts for class and viz tasks
-        if fine_tuning:
+        if class_only:
             # run encoder to get features to feed to classifiers
             rkhs_1, rkhs_5, _ = \
                 self.encode(x1, no_grad=True)
@@ -357,7 +357,7 @@ class Conv3x3(nn.Module):
         self.use_bn = use_bn
         self.conv = nn.Conv2d(n_in, n_out, n_kern, n_stride, 0,
                               bias=(not self.use_bn))
-        self.relu = nn.ReLU()
+        self.relu = nn.ReLU(inplace=True)
         self.bn = nn.BatchNorm2d(n_out) if self.use_bn else None
 
     def forward(self, x):
@@ -372,33 +372,6 @@ class Conv3x3(nn.Module):
         # always apply relu
         out = self.relu(x)
         return out
-
-
-class ConvMLP(nn.Module):
-    def __init__(self, n_input, n_hidden, n_output, n_layers=2):
-        super(ConvMLP, self).__init__()
-        assert(n_layers in [1, 2])
-        if n_layers == 1:
-            self.block_mlp = nn.Sequential(
-                nn.Conv2d(n_input, n_hidden, 1, 1, 0, bias=False),
-                nn.BatchNorm2d(n_hidden),
-                nn.ReLU(),
-                nn.Conv2d(n_hidden, n_output, 1, 1, 0, bias=True)
-            )
-        else:
-            self.block_mlp = nn.Sequential(
-                nn.Conv2d(n_input, n_hidden, 1, 1, 0, bias=False),
-                nn.BatchNorm2d(n_hidden),
-                nn.ReLU(),
-                nn.Conv2d(n_hidden, n_hidden, 1, 1, 0, bias=False),
-                nn.BatchNorm2d(n_hidden),
-                nn.ReLU(),
-                nn.Conv2d(n_hidden, n_output, 1, 1, 0, bias=True)
-            )
-
-    def forward(self, x):
-        h = self.block_mlp(x)
-        return h
 
 
 class MLPClassifier(nn.Module):
@@ -421,7 +394,7 @@ class MLPClassifier(nn.Module):
                 nn.Dropout(p=p),
                 nn.Linear(n_input, n_hidden, bias=False),
                 nn.BatchNorm1d(n_hidden),
-                nn.ReLU(),
+                nn.ReLU(inplace=True),
                 nn.Dropout(p=p),
                 nn.Linear(n_hidden, n_classes, bias=True)
             )
@@ -437,7 +410,7 @@ class FakeRKHSConvNet(nn.Module):
         self.conv1 = nn.Conv2d(n_input, n_output, kernel_size=1, stride=1,
                                padding=0, bias=False)
         self.bn1 = MaybeBatchNorm2d(n_output, True, use_bn)
-        self.relu1 = nn.ReLU()
+        self.relu1 = nn.ReLU(inplace=True)
         self.conv2 = nn.Conv2d(n_output, n_output, kernel_size=1, stride=1,
                                padding=0, bias=False)
         self.bn_out = MaybeBatchNorm2d(n_output, True, True)
@@ -475,8 +448,8 @@ class ConvResNxN(nn.Module):
         self.width = width
         self.stride = stride
         self.pad = pad
-        self.relu1 = nn.ReLU()
-        self.relu2 = nn.ReLU()
+        self.relu1 = nn.ReLU(inplace=True)
+        self.relu2 = nn.ReLU(inplace=True)
         self.conv1 = nn.Conv2d(n_in, n_out, width, stride, pad, bias=False)
         self.conv2 = nn.Conv2d(n_out, n_out, 1, 1, 0, bias=False)
         self.n_grow = n_out - n_in

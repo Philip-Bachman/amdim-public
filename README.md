@@ -48,11 +48,11 @@ Using the stronger augmentation and an appropriate learning schedule, the comman
 
 ## Evaluation Classifiers
 
-Example of retraining final evaluation classifiers on Places205, using an encoder checkpointed after training via self-supervised learning on ImageNet:
+Example of retraining evaluation classifiers on Places205, using an encoder checkpointed after training via self-supervised learning on ImageNet:
 
 ```
 CUDA_VISIBLE_DEVICES=0,1,2,3 python train.py \
-  --finetune # Add this flag to start the fine-tuning process
+  --classifiers # Add this flag to train evaluation classifiers
   --checkpoint_path ./path/to/imagenet/checkpoint.pth \
   --ndf 192 \
   --n_rkhs 1536 \
@@ -64,7 +64,8 @@ CUDA_VISIBLE_DEVICES=0,1,2,3 python train.py \
   --amp
 ```
 
-> When restoring from an encoder checkpoint, the evaluator will be re-initialized before training again.
+> When restoring from an encoder checkpoint, classifiers will be re-initialized before training again.
+> This can be used with other datasets if you can endure the pain of figuring out how to load them (one of the greatest challenges in any computer vision project)...
 
 ## Enabling Mixed Precision Training (`--amp`)
 If your GPU supports half precision, you can take advantage of it when training by passing the `--amp` (automatic mixed precision) flag.    

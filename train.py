@@ -9,7 +9,7 @@ from datasets import build_dataset, Dataset, get_dataset
 from model import Model
 from checkpoint import Checkpoint
 from task_self_supervised import train_self_supervised
-from task_fine_tune import train_fine_tune
+from task_classifiers import train_classifiers
 
 parser = argparse.ArgumentParser(description='Infomax Representations -- Self-Supervised Training')
 parser.add_argument('--dataset', type=str, default='STL10')
@@ -23,9 +23,9 @@ parser.add_argument('--amp', action='store_true', default=False,
                     help='Enables automatic mixed precision')
 
 # parameters for model and training objective
-parser.add_argument('--finetune', action='store_true', default=False,
-                    help="Wether to run self-supervised or"
-                    "finetuning training task")
+parser.add_argument('--classifiers', action='store_true', default=False,
+                    help="Wether to run self-supervised encoder or"
+                    "classifier training task")
 parser.add_argument('--ndf', type=int, default=128,
                     help='feature width for network')
 parser.add_argument('--n_rkhs', type=int, default=1024,
@@ -70,7 +70,7 @@ def main():
         build_dataset(dataset=dataset,
                       batch_size=args.batch_size,
                       input_dir=args.input_dir,
-                      fine_tuning=args.finetune)
+                      labeled_only=args.classifiers)
 
     torch_device = torch.device('cuda')
     # create new model with random parameters
@@ -79,14 +79,14 @@ def main():
                   use_bn=(args.use_bn == 1))
     # restore model parameters from a checkpoint if requested
     checkpoint = \
-        Checkpoint(model, args.checkpoint_path, args.output_dir, args.finetune)
+        Checkpoint(model, args.checkpoint_path, args.output_dir, args.classifiers)
     model = model.to(torch_device)
 
-    if args.finetune:
-        # run the classifier training/finetuning task
-        task = train_fine_tune
+    if args.classifiers:
+        # run the classifier training task
+        task = train_classifiers
     else:
-        # run the self-supervised task for training encoder
+        # run the self-supervised encoder training task
         task = train_self_supervised
     # do the real stuff...
     task(model, args.learning_rate, dataset, train_loader,
