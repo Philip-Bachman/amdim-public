@@ -17,8 +17,6 @@ class Checkpoint():
         return {
             'info_epochs': self.info_epochs,
             'info_steps': self.info_steps,
-            'class_epochs': self.class_epochs,
-            'class_steps': self.class_steps,
             'model': self.model.state_dict()
         }
 
