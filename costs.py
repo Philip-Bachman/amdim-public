@@ -55,7 +55,7 @@ class NCE_MI_MULTI(nn.Module):
         raw_scores = torch.mm(r_src, r_trg).float()
         raw_scores = raw_scores.reshape(n_batch_gpu, n_batch, n_locs)
         raw_scores = raw_scores / n_rkhs**0.5
-        lgt_reg = 4e-2 * (raw_scores**2.).mean()
+        lgt_reg = 5e-2 * (raw_scores**2.).mean()
         raw_scores = tanh_clip(raw_scores, clip_val=self.tclip)
 
         '''

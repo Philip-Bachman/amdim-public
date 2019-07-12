@@ -5,14 +5,17 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from mixed_precision import maybe_half
-from utils import flatten, random_locs_2d, Flatten, has_many_gpus
+from utils import flatten, random_locs_2d, Flatten
 from costs import LossMultiNCE
-from datasets import Dataset
+
+
+def has_many_gpus():
+    return torch.cuda.device_count() >= 6
 
 
 class Encoder(nn.Module):
     def __init__(self, dummy_batch, nc=3, ndf=64, n_rkhs=512, n_depth=3,
-                 encoder_size=32, use_bn=False):
+                 enc_size=32, use_bn=False):
         super(Encoder, self).__init__()
         self.nc = nc
         self.ndf = ndf
@@ -21,8 +24,8 @@ class Encoder(nn.Module):
         self.dim2layer = None
 
         # encoding block for local features
-        print('Using a {enc_size}x{enc_size} encoder'.format(enc_size=encoder_size))
-        if encoder_size == 32:
+        print('Using a {enc_size}x{enc_size} encoder'.format(enc_size=enc_size))
+        if enc_size == 32:
             self.layer_list = nn.ModuleList([
                 Conv3x3(nc, ndf, 3, 1, 0, False),
                 ConvResNxN(ndf, ndf, 1, 1, 0, use_bn),
@@ -34,7 +37,7 @@ class Encoder(nn.Module):
                 ConvResNxN(ndf * 4, n_rkhs, 3, 1, 0, use_bn),
                 MaybeBatchNorm2d(n_rkhs, True, True)
             ])
-        elif encoder_size == 64:
+        elif enc_size == 64:
             self.layer_list = nn.ModuleList([
                 Conv3x3(nc, ndf, 3, 1, 0, False),
                 ConvResBlock(ndf * 1, ndf * 2, 4, 2, 0, n_depth, use_bn),
@@ -46,7 +49,7 @@ class Encoder(nn.Module):
                 ConvResNxN(ndf * 8, n_rkhs, 3, 1, 0, use_bn),
                 MaybeBatchNorm2d(n_rkhs, True, True)
             ])
-        elif encoder_size == 128:
+        elif enc_size == 128:
             self.layer_list = nn.ModuleList([
                 Conv3x3(nc, ndf, 5, 2, 2, False, pad_mode='reflect'),
                 Conv3x3(ndf, ndf, 3, 1, 0, False),
@@ -61,7 +64,7 @@ class Encoder(nn.Module):
             ])
         else:
             raise RuntimeError("Could not build encoder."
-                               "Encoder size {} is not supported".format(encoder_size))
+                               "Encoder size {} is not supported".format(enc_size))
         self._config_modules(dummy_batch, [1, 5, 7], n_rkhs, use_bn)
 
     def init_weights(self, init_scale=1.):
@@ -166,17 +169,15 @@ class Evaluator(nn.Module):
 
 class Model(nn.Module):
     def __init__(self, ndf, n_classes, n_rkhs, tclip=20.,
-                 n_depth=3, use_bn=False, dataset=Dataset.STL10):
+                 n_depth=3, use_bn=False, enc_size=32):
         super(Model, self).__init__()
         self.n_rkhs = n_rkhs
         self.tasks = ('1t5', '1t7', '5t5', '5t7', '7t7')
-
-        encoder_size = self._get_encoder_size(dataset)
-        dummy_batch = torch.zeros((2, 3, encoder_size, encoder_size))
+        dummy_batch = torch.zeros((2, 3, enc_size, enc_size))
 
         # encoder that provides multiscale features
         self.encoder = Encoder(dummy_batch, nc=3, ndf=ndf, n_rkhs=n_rkhs,
-                               n_depth=n_depth, encoder_size=encoder_size,
+                               n_depth=n_depth, enc_size=enc_size,
                                use_bn=use_bn)
         rkhs_1, rkhs_5, _ = self.encoder(dummy_batch)
         # convert for multi-gpu use
@@ -235,17 +236,17 @@ class Model(nn.Module):
         # dict for returning various values
         res_dict = {}
         if class_only:
-            # run encoder and classifiers
+            # shortcut to encode one image and evaluate classifier
             rkhs_1, _, _ = self.encode(x1, no_grad=True)
             lgt_glb_mlp, lgt_glb_lin = self.evaluator(rkhs_1)
             res_dict['class'] = [lgt_glb_mlp, lgt_glb_lin]
             res_dict['rkhs_glb'] = flatten(rkhs_1)
             return res_dict
 
-        # hack for redistributing workload in multi-gpu setting
-        n_batch = x1.size(0)
-        n_gpus = torch.cuda.device_count()
+        # hack for redistributing workload in highly multi-gpu setting
+        # -- yeah, "highly-multi-gpu" is obviously subjective...
         if has_many_gpus():
+            n_batch = x1.size(0)
             n_gpus = torch.cuda.device_count()
             assert (n_batch % (n_gpus - 1) == 0), 'n_batch: {}'.format(n_batch)
             # expand input with dummy chunks so cuda:0 can skip compute
@@ -254,18 +255,17 @@ class Model(nn.Module):
             x1 = torch.cat([dummy_chunk, x1], dim=0)
             x2 = torch.cat([dummy_chunk, x2], dim=0)
 
-        # run global and local feature inputs through the encoder
+        # run augmented image pairs through the encoder
         r1_x1, r5_x1, r7_x1 = self.encoder(x1)
         r1_x2, r5_x2, r7_x2 = self.encoder(x2)
 
         # hack for redistributing workload in highly-multi-gpu setting
-        # -- yeah, "highly-multi-gpu" is obviously subjective...
         if has_many_gpus():
             # strip off dummy vals returned by cuda:0
             r1_x1, r5_x1, r7_x1 = r1_x1[1:], r5_x1[1:], r7_x1[1:]
             r1_x2, r5_x2, r7_x2 = r1_x2[1:], r5_x2[1:], r7_x2[1:]
 
-        # compute losses for global->local tasks
+        # compute NCE infomax objective at multiple scales
         loss_1t5, loss_1t7, loss_5t5, lgt_reg = \
             self.g2l_loss(r1_x1, r5_x1, r7_x1, r1_x2, r5_x2, r7_x2)
         res_dict['g2l_1t5'] = loss_1t5
@@ -276,18 +276,10 @@ class Model(nn.Module):
         res_dict['rkhs_glb'] = flatten(r1_x1)
 
         # compute classifier logits for online eval during infomax training
+        # - we do this for both images in each augmented pair...
         lgt_glb_mlp, lgt_glb_lin = self.evaluator(ftr_1=torch.cat([r1_x1, r1_x2]))
         res_dict['class'] = [lgt_glb_mlp, lgt_glb_lin]
         return res_dict
-
-    def _get_encoder_size(self, dataset):
-        if dataset in [Dataset.C10, Dataset.C100]:
-            return 32
-        if dataset == Dataset.STL10:
-            return 64
-        if dataset in [Dataset.IN128, Dataset.PLACES205]:
-            return 128
-        raise RuntimeError("Couldn't get encoder size, unknown dataset: {}".format(dataset))
 
 
 ##############################
@@ -327,7 +319,8 @@ class Conv3x3(nn.Module):
         assert(pad_mode in ['constant', 'reflect'])
         self.n_pad = (n_pad, n_pad, n_pad, n_pad)
         self.pad_mode = pad_mode
-        self.conv = nn.Conv2d(n_in, n_out, n_kern, n_stride, 0, bias=use_bn)
+        self.conv = nn.Conv2d(n_in, n_out, n_kern, n_stride, 0,
+                              bias=(not use_bn))
         self.relu = nn.ReLU(inplace=True)
         self.bn = MaybeBatchNorm2d(n_out, True, use_bn)
 

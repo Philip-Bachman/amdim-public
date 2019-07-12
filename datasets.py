@@ -18,6 +18,16 @@ class Dataset(Enum):
     PLACES205 = 5
 
 
+def get_encoder_size(self, dataset):
+    if dataset in [Dataset.C10, Dataset.C100]:
+        return 32
+    if dataset == Dataset.STL10:
+        return 64
+    if dataset in [Dataset.IN128, Dataset.PLACES205]:
+        return 128
+    raise RuntimeError("Couldn't get encoder size, unknown dataset: {}".format(dataset))
+
+
 def get_dataset(dataset_name):
     try:
         return Dataset[dataset_name.upper()]
@@ -153,7 +163,6 @@ class TransformsImageNet128:
     '''
     ImageNet dataset, for use with 128x128 full image encoder.
     '''
-
     def __init__(self):
         # image augmentation functions
         self.flip_lr = transforms.RandomHorizontalFlip(p=0.5)

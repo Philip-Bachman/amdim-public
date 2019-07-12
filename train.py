@@ -5,13 +5,14 @@ import torch
 
 import mixed_precision
 from stats import StatTracker
-from datasets import build_dataset, Dataset, get_dataset
+from datasets import Dataset, build_dataset, get_dataset, get_encoder_size
 from model import Model
 from checkpoint import Checkpoint
 from task_self_supervised import train_self_supervised
 from task_classifiers import train_classifiers
 
 parser = argparse.ArgumentParser(description='Infomax Representations -- Self-Supervised Training')
+# parameters for general training stuff
 parser.add_argument('--dataset', type=str, default='STL10')
 parser.add_argument('--batch_size', type=int, default=200,
                     help='input batch size (default: 200)')
@@ -27,14 +28,13 @@ parser.add_argument('--classifiers', action='store_true', default=False,
                     help="Wether to run self-supervised encoder or"
                     "classifier training task")
 parser.add_argument('--ndf', type=int, default=128,
-                    help='feature width for network')
+                    help='feature width for encoder')
 parser.add_argument('--n_rkhs', type=int, default=1024,
                     help='number of dimensions in fake RKHS embeddings')
 parser.add_argument('--tclip', type=float, default=20.0,
-                    help='soft clipping value for NCE scores')
+                    help='soft clipping range for NCE scores')
 parser.add_argument('--n_depth', type=int, default=3)
 parser.add_argument('--use_bn', type=int, default=0)
-
 
 # parameters for output, logging, checkpointing, etc
 parser.add_argument('--output_dir', type=str, default='./runs',
@@ -48,7 +48,7 @@ parser.add_argument('--cpt_name', type=str, default='amdim_cpt.pth',
                     help='name to use for storing checkpoints during training')
 parser.add_argument('--run_name', type=str, default='default_run',
                     help='name to use for the tensorbaord summary for this run')
-
+# ...
 args = parser.parse_args()
 
 
@@ -67,6 +67,7 @@ def main():
 
     # get the dataset
     dataset = get_dataset(args.dataset)
+    enc_size = get_encoder_size(dataset)
 
     # get a helper object for tensorboard logging
     log_dir = os.path.join(args.output_dir, args.run_name)
@@ -83,7 +84,7 @@ def main():
     # create new model with random parameters
     model = Model(ndf=args.ndf, n_classes=num_classes, n_rkhs=args.n_rkhs,
                   tclip=args.tclip, n_depth=args.n_depth, dataset=dataset,
-                  use_bn=(args.use_bn == 1))
+                  use_bn=(args.use_bn == 1), enc_size=enc_size)
     # restore model parameters from a checkpoint if requested
     checkpoint = Checkpoint(model, args.cpt_load_path, args.output_dir)
     model = model.to(torch_device)

@@ -56,7 +56,7 @@ def _warmup_batchnorm(model, data_loader, device, batches=100, train_loader=Fals
         if train_loader:
             images = images[0]
         images = images.to(device)
-        model(x1=images, x2=images, class_only=True)
+        _ = model(x1=images, x2=images, class_only=True)
 
 
 def flatten(x):
@@ -208,6 +208,3 @@ class Flatten(nn.Module):
     def forward(self, input_tensor):
         return input_tensor.view(input_tensor.size(0), -1)
 
-
-def has_many_gpus():
-    return torch.cuda.device_count() >= 6

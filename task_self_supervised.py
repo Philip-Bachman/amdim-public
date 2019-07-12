@@ -92,7 +92,7 @@ def _train(model, optim_inf, scheduler_inf, checkpoint, epochs,
                 print('Epoch {0:d}, {1:d} updates -- {2:.4f} sec/update'
                       .format(epoch, epoch_updates, spu))
                 time_start = time.time()
-            if (total_updates % 1000) == 0:
+            if (total_updates % 500) == 0:
                 # record diagnostics
                 eval_start = time.time()
                 fast_stats = AverageMeterSet()
