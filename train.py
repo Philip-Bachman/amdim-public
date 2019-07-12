@@ -85,6 +85,7 @@ def main():
     model = Model(ndf=args.ndf, n_classes=num_classes, n_rkhs=args.n_rkhs,
                   tclip=args.tclip, n_depth=args.n_depth, enc_size=enc_size,
                   use_bn=(args.use_bn == 1))
+    model.init_weights(init_scale=1.0)
     # restore model parameters from a checkpoint if requested
     checkpoint = Checkpoint(model, args.cpt_load_path, args.output_dir)
     model = model.to(torch_device)
