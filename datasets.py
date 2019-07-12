@@ -18,7 +18,7 @@ class Dataset(Enum):
     PLACES205 = 5
 
 
-def get_encoder_size(self, dataset):
+def get_encoder_size(dataset):
     if dataset in [Dataset.C10, Dataset.C100]:
         return 32
     if dataset == Dataset.STL10:
