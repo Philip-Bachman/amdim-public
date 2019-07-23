@@ -14,51 +14,50 @@ def has_many_gpus():
 
 
 class Encoder(nn.Module):
-    def __init__(self, dummy_batch, nc=3, ndf=64, n_rkhs=512, n_depth=3,
-                 enc_size=32, use_bn=False):
+    def __init__(self, dummy_batch, num_channels=3, ndf=64, n_rkhs=512, 
+                res_block_depth=3, encoder_size=32, use_bn=False):
         super(Encoder, self).__init__()
-        self.nc = nc
         self.ndf = ndf
         self.n_rkhs = n_rkhs
         self.use_bn = use_bn
         self.dim2layer = None
 
         # encoding block for local features
-        print('Using a {enc_size}x{enc_size} encoder'.format(enc_size=enc_size))
-        if enc_size == 32:
+        print('Using a {encoder_size}x{encoder_size} encoder'.format(encoder_size=encoder_size))
+        if encoder_size == 32:
             self.layer_list = nn.ModuleList([
-                Conv3x3(nc, ndf, 3, 1, 0, False),
+                Conv3x3(num_channels, ndf, 3, 1, 0, False),
                 ConvResNxN(ndf, ndf, 1, 1, 0, use_bn),
-                ConvResBlock(ndf * 1, ndf * 2, 4, 2, 0, n_depth, use_bn),
-                ConvResBlock(ndf * 2, ndf * 4, 2, 2, 0, n_depth, use_bn),
+                ConvResBlock(ndf * 1, ndf * 2, 4, 2, 0, res_block_depth, use_bn),
+                ConvResBlock(ndf * 2, ndf * 4, 2, 2, 0, res_block_depth, use_bn),
                 MaybeBatchNorm2d(ndf * 4, True, use_bn),
-                ConvResBlock(ndf * 4, ndf * 4, 3, 1, 0, n_depth, use_bn),
-                ConvResBlock(ndf * 4, ndf * 4, 3, 1, 0, n_depth, use_bn),
+                ConvResBlock(ndf * 4, ndf * 4, 3, 1, 0, res_block_depth, use_bn),
+                ConvResBlock(ndf * 4, ndf * 4, 3, 1, 0, res_block_depth, use_bn),
                 ConvResNxN(ndf * 4, n_rkhs, 3, 1, 0, use_bn),
                 MaybeBatchNorm2d(n_rkhs, True, True)
             ])
-        elif enc_size == 64:
+        elif encoder_size == 64:
             self.layer_list = nn.ModuleList([
-                Conv3x3(nc, ndf, 3, 1, 0, False),
-                ConvResBlock(ndf * 1, ndf * 2, 4, 2, 0, n_depth, use_bn),
-                ConvResBlock(ndf * 2, ndf * 4, 4, 2, 0, n_depth, use_bn),
-                ConvResBlock(ndf * 4, ndf * 8, 2, 2, 0, n_depth, use_bn),
+                Conv3x3(num_channels, ndf, 3, 1, 0, False),
+                ConvResBlock(ndf * 1, ndf * 2, 4, 2, 0, res_block_depth, use_bn),
+                ConvResBlock(ndf * 2, ndf * 4, 4, 2, 0, res_block_depth, use_bn),
+                ConvResBlock(ndf * 4, ndf * 8, 2, 2, 0, res_block_depth, use_bn),
                 MaybeBatchNorm2d(ndf * 8, True, use_bn),
-                ConvResBlock(ndf * 8, ndf * 8, 3, 1, 0, n_depth, use_bn),
-                ConvResBlock(ndf * 8, ndf * 8, 3, 1, 0, n_depth, use_bn),
+                ConvResBlock(ndf * 8, ndf * 8, 3, 1, 0, res_block_depth, use_bn),
+                ConvResBlock(ndf * 8, ndf * 8, 3, 1, 0, res_block_depth, use_bn),
                 ConvResNxN(ndf * 8, n_rkhs, 3, 1, 0, use_bn),
                 MaybeBatchNorm2d(n_rkhs, True, True)
             ])
-        elif enc_size == 128:
+        elif encoder_size == 128:
             self.layer_list = nn.ModuleList([
-                Conv3x3(nc, ndf, 5, 2, 2, False, pad_mode='reflect'),
+                Conv3x3(num_channels, ndf, 5, 2, 2, False, pad_mode='reflect'),
                 Conv3x3(ndf, ndf, 3, 1, 0, False),
-                ConvResBlock(ndf * 1, ndf * 2, 4, 2, 0, n_depth, use_bn),
-                ConvResBlock(ndf * 2, ndf * 4, 4, 2, 0, n_depth, use_bn),
-                ConvResBlock(ndf * 4, ndf * 8, 2, 2, 0, n_depth, use_bn),
+                ConvResBlock(ndf * 1, ndf * 2, 4, 2, 0, res_block_depth, use_bn),
+                ConvResBlock(ndf * 2, ndf * 4, 4, 2, 0, res_block_depth, use_bn),
+                ConvResBlock(ndf * 4, ndf * 8, 2, 2, 0, res_block_depth, use_bn),
                 MaybeBatchNorm2d(ndf * 8, True, use_bn),
-                ConvResBlock(ndf * 8, ndf * 8, 3, 1, 0, n_depth, use_bn),
-                ConvResBlock(ndf * 8, ndf * 8, 3, 1, 0, n_depth, use_bn),
+                ConvResBlock(ndf * 8, ndf * 8, 3, 1, 0, res_block_depth, use_bn),
+                ConvResBlock(ndf * 8, ndf * 8, 3, 1, 0, res_block_depth, use_bn),
                 ConvResNxN(ndf * 8, n_rkhs, 3, 1, 0, use_bn),
                 MaybeBatchNorm2d(n_rkhs, True, True)
             ])
@@ -169,16 +168,26 @@ class Evaluator(nn.Module):
 
 class Model(nn.Module):
     def __init__(self, ndf, n_classes, n_rkhs, tclip=20.,
-                 n_depth=3, use_bn=False, enc_size=32):
+                 res_block_depth=3, encoder_size=32, use_bn=False):
         super(Model, self).__init__()
-        self.n_rkhs = n_rkhs
+        self.hyperparams = {
+            'ndf': ndf,
+            'n_classes': n_classes,
+            'n_rkhs': n_rkhs,
+            'tclip': tclip, 
+            'res_block_depth': res_block_depth,
+            'encoder_size': encoder_size,
+            'use_bn': use_bn
+        }
+
+        # self.n_rkhs = n_rkhs
         self.tasks = ('1t5', '1t7', '5t5', '5t7', '7t7')
-        dummy_batch = torch.zeros((2, 3, enc_size, enc_size))
+        dummy_batch = torch.zeros((2, 3, encoder_size, encoder_size))
 
         # encoder that provides multiscale features
-        self.encoder = Encoder(dummy_batch, nc=3, ndf=ndf, n_rkhs=n_rkhs,
-                               n_depth=n_depth, enc_size=enc_size,
-                               use_bn=use_bn)
+        self.encoder = Encoder(dummy_batch, num_channels=3, ndf=ndf, 
+                               n_rkhs=n_rkhs, res_block_depth=res_block_depth,
+                               encoder_size=encoder_size, use_bn=use_bn)
         rkhs_1, rkhs_5, _ = self.encoder(dummy_batch)
         # convert for multi-gpu use
         self.encoder = nn.DataParallel(self.encoder)
@@ -322,17 +331,18 @@ class Conv3x3(nn.Module):
         self.conv = nn.Conv2d(n_in, n_out, n_kern, n_stride, 0,
                               bias=(not use_bn))
         self.relu = nn.ReLU(inplace=True)
-        self.bn = MaybeBatchNorm2d(n_out, True, use_bn)
+        self.bn = MaybeBatchNorm2d(n_out, True, use_bn) if use_bn else None
 
     def forward(self, x):
         if self.n_pad[0] > 0:
-            # maybe pad the input
+            # pad the input if required
             x = F.pad(x, self.n_pad, mode=self.pad_mode)
-        # always apply conv
+        # conv is always applied
         x = self.conv(x)
-        # maybe apply batchnorm
-        x = self.bn(x)
-        # always apply relu
+        # apply batchnorm if required
+        if self.bn is not None:
+            x = self.bn(x)
+        # relu is always applied
         out = self.relu(x)
         return out
 
@@ -366,20 +376,20 @@ class MLPClassifier(nn.Module):
         logits = self.block_forward(x)
         return logits
 
-
 class FakeRKHSConvNet(nn.Module):
     def __init__(self, n_input, n_output, use_bn=False):
         super(FakeRKHSConvNet, self).__init__()
         self.conv1 = nn.Conv2d(n_input, n_output, kernel_size=1, stride=1,
                                padding=0, bias=False)
-        self.bn1 = MaybeBatchNorm2d(n_output, True, use_bn)
         self.relu1 = nn.ReLU(inplace=True)
         self.conv2 = nn.Conv2d(n_output, n_output, kernel_size=1, stride=1,
                                padding=0, bias=False)
+        # BN is optional for hidden layer and always for output layer
+        self.bn_hid = MaybeBatchNorm2d(n_output, True, use_bn)
         self.bn_out = MaybeBatchNorm2d(n_output, True, True)
         self.shortcut = nn.Conv2d(n_input, n_output, kernel_size=1,
                                   stride=1, padding=0, bias=True)
-        # when possible, initialize shortcut to be like identity
+        # initialize shortcut to be like identity (if possible)
         if n_output >= n_input:
             eye_mask = np.zeros((n_output, n_input, 1, 1), dtype=np.uint8)
             for i in range(n_input):
@@ -396,9 +406,10 @@ class FakeRKHSConvNet(nn.Module):
         # initialize second conv in res branch
         # -- set to 0, like fixup/zero init
         nn.init.constant_(self.conv2.weight, 0.)
+        return
 
     def forward(self, x):
-        h_res = self.conv2(self.relu1(self.bn1(self.conv1(x))))
+        h_res = self.conv2(self.relu1(self.bn_hid(self.conv1(x))))
         h = self.bn_out(h_res + self.shortcut(x))
         return h
 
@@ -406,6 +417,7 @@ class FakeRKHSConvNet(nn.Module):
 class ConvResNxN(nn.Module):
     def __init__(self, n_in, n_out, width, stride, pad, use_bn=False):
         super(ConvResNxN, self).__init__()
+        assert (n_out >= n_in)
         self.n_in = n_in
         self.n_out = n_out
         self.width = width
@@ -415,14 +427,10 @@ class ConvResNxN(nn.Module):
         self.relu2 = nn.ReLU(inplace=True)
         self.conv1 = nn.Conv2d(n_in, n_out, width, stride, pad, bias=False)
         self.conv2 = nn.Conv2d(n_out, n_out, 1, 1, 0, bias=False)
-        self.n_grow = n_out - n_in
-        if self.n_grow < 0:
-            # use self.conv3 to downsample feature dim
-            self.conv3 = nn.Conv2d(n_in, n_out, width, stride, pad, bias=True)
-        else:
-            # self.conv3 is not used when n_out >= n_in
-            self.conv3 = None
+        self.conv3 = None
+        # ...
         self.bn1 = MaybeBatchNorm2d(n_out, True, use_bn)
+        return
 
     def init_weights(self, init_scale=1.):
         # initialize first conv in res branch
@@ -432,17 +440,18 @@ class ConvResNxN(nn.Module):
         # initialize second conv in res branch
         # -- set to 0, like fixup/zero init
         nn.init.constant_(self.conv2.weight, 0.)
+        return
 
     def forward(self, x):
         h1 = self.bn1(self.conv1(x))
         h2 = self.conv2(self.relu2(h1))
-        if self.n_out < self.n_in:
+        if (self.n_out < self.n_in):
             h3 = self.conv3(x)
-        elif self.n_in == self.n_out:
+        elif (self.n_in == self.n_out):
             h3 = F.avg_pool2d(x, self.width, self.stride, self.pad)
         else:
             h3_pool = F.avg_pool2d(x, self.width, self.stride, self.pad)
-            h3 = F.pad(h3_pool, (0, 0, 0, 0, 0, self.n_grow))
+            h3 = F.pad(h3_pool, (0, 0, 0, 0, 0, self.n_out - self.n_in))
         h23 = h2 + h3
         return h23
 
@@ -454,15 +463,18 @@ class ConvResBlock(nn.Module):
         for i in range(depth - 1):
             layer_list.append(ConvResNxN(n_out, n_out, 1, 1, 0, use_bn))
         self.layer_list = nn.Sequential(*layer_list)
+        return
 
     def init_weights(self, init_scale=1.):
         '''
-        Do a fixup-ish init for each ConvResNxN in this block.
+        Do a fixup-style init for each ConvResNxN in this block.
         '''
         for m in self.layer_list:
             m.init_weights(init_scale)
+        return
 
     def forward(self, x):
         # run forward pass through the list of ConvResNxN layers
         x_out = self.layer_list(x)
         return x_out
+

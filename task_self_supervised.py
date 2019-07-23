@@ -14,7 +14,7 @@ from datasets import Dataset
 from costs import loss_xent
 
 
-def _train(model, optim_inf, scheduler_inf, checkpoint, epochs,
+def _train(model, optim_inf, scheduler_inf, checkpointer, epochs,
            train_loader, test_loader, stat_tracker, log_dir, device):
     '''
     Training loop for optimizing encoder
@@ -31,7 +31,7 @@ def _train(model, optim_inf, scheduler_inf, checkpoint, epochs,
     torch.cuda.empty_cache()
 
     # prepare checkpoint and stats accumulator
-    next_epoch, total_updates = checkpoint.get_current_position()
+    next_epoch, total_updates = checkpointer.get_current_position()
     fast_stats = AverageMeterSet()
     # run main training loop
     for epoch in range(next_epoch, epochs):
@@ -113,12 +113,11 @@ def _train(model, optim_inf, scheduler_inf, checkpoint, epochs,
         print(diag_str)
         sys.stdout.flush()
         stat_tracker.record_stats(epoch_stats.averages(epoch, prefix='costs/'))
-        # checkpoint the model
-        checkpoint.update(epoch + 1, total_updates)
+        checkpointer.update(epoch + 1, total_updates)
 
 
 def train_self_supervised(model, learning_rate, dataset, train_loader,
-                          test_loader, stat_tracker, checkpoint, log_dir, device):
+                          test_loader, stat_tracker, checkpointer, log_dir, device):
     # configure optimizer
     mods_inf = [m for m in model.info_modules]
     mods_cls = [m for m in model.class_modules]
@@ -136,5 +135,5 @@ def train_self_supervised(model, learning_rate, dataset, train_loader,
         scheduler = MultiStepLR(optimizer, milestones=[30, 45], gamma=0.2)
         epochs = 50
     # train the model
-    _train(model, optimizer, scheduler, checkpoint, epochs,
+    _train(model, optimizer, scheduler, checkpointer, epochs,
            train_loader, test_loader, stat_tracker, log_dir, device)
