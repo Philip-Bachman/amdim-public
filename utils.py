@@ -40,8 +40,8 @@ def test_model(model, test_loader, device, stats, max_evals=200000):
     acc_glb_lin = correct_glb_lin / total
     model.train()
     # record stats in the provided stat tracker
-    stats.update('test_acc_glb_mlp', acc_glb_mlp, n=1)
-    stats.update('test_acc_glb_lin', acc_glb_lin, n=1)
+    stats.update('test_accuracy_mlp_classifier', acc_glb_mlp, n=1)
+    stats.update('test_accuracy_linear_classifier', acc_glb_lin, n=1)
 
 
 def _warmup_batchnorm(model, data_loader, device, batches=100, train_loader=False):

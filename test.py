@@ -26,7 +26,6 @@ parser.add_argument('--input_dir', type=str, default='/mnt/imagenet',
                     " C100 or STL10 as the data will be automatically downloaded.")
 parser.add_argument('--run_name', type=str, default='default_run',
                     help='name to use for the tensorbaord summary for this run')
-# ...
 args = parser.parse_args()
 
 
@@ -55,6 +54,7 @@ def main():
    
     model = checkpointer.restore_model_from_checkpoint(args.cpt_load_path)
     model = model.to(torch_device)
+    model, _ = mixed_precision.initialize(model, None)
 
     test_stats = AverageMeterSet()
     test(model, test_loader, torch_device, test_stats)
