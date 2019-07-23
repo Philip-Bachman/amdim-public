@@ -12,7 +12,7 @@ from utils import test_model
 
 parser = argparse.ArgumentParser(description='Infomax Representations - Testing Script')
 # parameters for general training stuff
-parser.add_argument('cpt_load_path', type=str,
+parser.add_argument('checkpoint_path', type=str,
                     help='path from which to load checkpoint')
 parser.add_argument('--dataset', type=str, default='STL10')
 parser.add_argument('--batch_size', type=int, default=200,
@@ -52,7 +52,7 @@ def main():
     torch_device = torch.device('cuda')
     checkpointer = Checkpointer()
    
-    model = checkpointer.restore_model_from_checkpoint(args.cpt_load_path)
+    model = checkpointer.restore_model_from_checkpoint(args.checkpoint_path)
     model = model.to(torch_device)
     model, _ = mixed_precision.initialize(model, None)
 

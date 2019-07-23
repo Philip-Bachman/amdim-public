@@ -5,9 +5,6 @@
 
 Our paper describing AMDIM is available at: https://arxiv.org/abs/1906.00910.
 
-## Note
-We are in the process of cleaning-up and porting over code from our working repo, which is still in flux, so performance of models from this repo will be variable for a little while. We will add checkpoints for some strong models trained on ImageNet via self-supervision. Also, contact me (Phil) for help with adding the 3rd-party data augmentation -- it's pretty quick to get working.
-
 ### Main Results 
 Results of AMDIM compared to other methods when evaluating accuracy using a linear classifier trained on top of representations provided by the self-supervised encoder:
 
@@ -24,8 +21,30 @@ CPC - huge [2]          | 61.0            | n/a
 > [1]: Results from [Kolesnikov et al. [2019]](https://arxiv.org/abs/1906.00910).<br/>
 > [2]: Results from [Henaff et al. [2019]](https://arxiv.org/abs/1905.09272).<br/>
 
-## Self-Supervised Training
 
+## Pre-trained Models
+
+Two pre-trained models are available two download:
+
+#### AMDIM-Medium (~430M parameters)
+[amdim_ndf256_rkhs2048_rd10.pth]()   
+This model should get 68%+ linear accuracy on the test set.
+
+#### AMDIM-Large (~670M parameters)
+[amdim_ndf320_rkhs2560_rd10.pth]()   
+This model should get 67%+ linear accuracy on the test set. 
+
+
+#### Testing a model
+To get the accuracy of a checkpointed model on ImageNet test set:  
+```
+python test.py 
+--dataset in128 
+--input_dir <path/to/imagenet> 
+<checkpoint_path.pth>
+```
+
+## Self-Supervised Training
 
 You should be able to get some good results on ImageNet if you have access to 4 Tesla V100 GPUs with: 
 ```
@@ -46,7 +65,7 @@ with equivalent architecture by 1-2%. Our strongest results use augmentation bas
 
 Using the stronger augmentation and an appropriate learning schedule, the command above should produce a bit over 63% accuracy on ImageNet using the online evaluation classifiers. With the standard torchvision augmentations the result will drop to a bit over 62%, which is still decent (significantly state-of-the-art, makes good coffee, etc.).
 
-## Evaluation Classifiers
+## Evaluation Classifiers Training
 
 Example of retraining evaluation classifiers on Places205, using an encoder checkpointed after training via self-supervised learning on ImageNet:
 

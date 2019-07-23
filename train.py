@@ -42,7 +42,7 @@ parser.add_argument('--output_dir', type=str, default='./runs',
 parser.add_argument('--input_dir', type=str, default='/mnt/imagenet',
                     help="Input directory for the dataset. Not needed For C10,"
                     " C100 or STL10 as the data will be automatically downloaded.")
-parser.add_argument('--cpt_load_path', type=str, default=None,
+parser.add_argument('--checkpoint_path', type=str, default=None,
                     help='path from which to load checkpoint (if available)')
 parser.add_argument('--cpt_name', type=str, default='amdim_cpt.pth',
                     help='name to use for storing checkpoints during training')
@@ -82,9 +82,9 @@ def main():
 
     torch_device = torch.device('cuda')
     checkpointer = Checkpointer(args.output_dir)
-    if args.cpt_load_path:
+    if args.checkpoint_path:
         model = checkpointer.restore_model_from_checkpoint(
-                    args.cpt_load_path, 
+                    args.checkpoint_path, 
                     training_classifier=args.classifiers)
     else:
         # create new model with random parameters
