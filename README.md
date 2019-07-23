@@ -28,11 +28,11 @@ Two pre-trained models are available two download:
 
 #### AMDIM-Medium (~430M parameters)
 [amdim_ndf256_rkhs2048_rd10.pth]()   
-This model should get 68%+ linear accuracy on the test set.
+This model should get 67%+ linear accuracy on the test set.
 
 #### AMDIM-Large (~670M parameters)
 [amdim_ndf320_rkhs2560_rd10.pth]()   
-This model should get 67%+ linear accuracy on the test set. 
+This model should get 68%+ linear accuracy on the test set. 
 
 
 #### Testing a model
