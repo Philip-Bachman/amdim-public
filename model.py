@@ -15,7 +15,7 @@ def has_many_gpus():
 
 class Encoder(nn.Module):
     def __init__(self, dummy_batch, num_channels=3, ndf=64, n_rkhs=512, 
-                res_block_depth=3, encoder_size=32, use_bn=False):
+                n_depth=3, encoder_size=32, use_bn=False):
         super(Encoder, self).__init__()
         self.ndf = ndf
         self.n_rkhs = n_rkhs
@@ -28,23 +28,23 @@ class Encoder(nn.Module):
             self.layer_list = nn.ModuleList([
                 Conv3x3(num_channels, ndf, 3, 1, 0, False),
                 ConvResNxN(ndf, ndf, 1, 1, 0, use_bn),
-                ConvResBlock(ndf * 1, ndf * 2, 4, 2, 0, res_block_depth, use_bn),
-                ConvResBlock(ndf * 2, ndf * 4, 2, 2, 0, res_block_depth, use_bn),
+                ConvResBlock(ndf * 1, ndf * 2, 4, 2, 0, n_depth, use_bn),
+                ConvResBlock(ndf * 2, ndf * 4, 2, 2, 0, n_depth, use_bn),
                 MaybeBatchNorm2d(ndf * 4, True, use_bn),
-                ConvResBlock(ndf * 4, ndf * 4, 3, 1, 0, res_block_depth, use_bn),
-                ConvResBlock(ndf * 4, ndf * 4, 3, 1, 0, res_block_depth, use_bn),
+                ConvResBlock(ndf * 4, ndf * 4, 3, 1, 0, n_depth, use_bn),
+                ConvResBlock(ndf * 4, ndf * 4, 3, 1, 0, n_depth, use_bn),
                 ConvResNxN(ndf * 4, n_rkhs, 3, 1, 0, use_bn),
                 MaybeBatchNorm2d(n_rkhs, True, True)
             ])
         elif encoder_size == 64:
             self.layer_list = nn.ModuleList([
                 Conv3x3(num_channels, ndf, 3, 1, 0, False),
-                ConvResBlock(ndf * 1, ndf * 2, 4, 2, 0, res_block_depth, use_bn),
-                ConvResBlock(ndf * 2, ndf * 4, 4, 2, 0, res_block_depth, use_bn),
-                ConvResBlock(ndf * 4, ndf * 8, 2, 2, 0, res_block_depth, use_bn),
+                ConvResBlock(ndf * 1, ndf * 2, 4, 2, 0, n_depth, use_bn),
+                ConvResBlock(ndf * 2, ndf * 4, 4, 2, 0, n_depth, use_bn),
+                ConvResBlock(ndf * 4, ndf * 8, 2, 2, 0, n_depth, use_bn),
                 MaybeBatchNorm2d(ndf * 8, True, use_bn),
-                ConvResBlock(ndf * 8, ndf * 8, 3, 1, 0, res_block_depth, use_bn),
-                ConvResBlock(ndf * 8, ndf * 8, 3, 1, 0, res_block_depth, use_bn),
+                ConvResBlock(ndf * 8, ndf * 8, 3, 1, 0, n_depth, use_bn),
+                ConvResBlock(ndf * 8, ndf * 8, 3, 1, 0, n_depth, use_bn),
                 ConvResNxN(ndf * 8, n_rkhs, 3, 1, 0, use_bn),
                 MaybeBatchNorm2d(n_rkhs, True, True)
             ])
@@ -52,12 +52,12 @@ class Encoder(nn.Module):
             self.layer_list = nn.ModuleList([
                 Conv3x3(num_channels, ndf, 5, 2, 2, False, pad_mode='reflect'),
                 Conv3x3(ndf, ndf, 3, 1, 0, False),
-                ConvResBlock(ndf * 1, ndf * 2, 4, 2, 0, res_block_depth, use_bn),
-                ConvResBlock(ndf * 2, ndf * 4, 4, 2, 0, res_block_depth, use_bn),
-                ConvResBlock(ndf * 4, ndf * 8, 2, 2, 0, res_block_depth, use_bn),
+                ConvResBlock(ndf * 1, ndf * 2, 4, 2, 0, n_depth, use_bn),
+                ConvResBlock(ndf * 2, ndf * 4, 4, 2, 0, n_depth, use_bn),
+                ConvResBlock(ndf * 4, ndf * 8, 2, 2, 0, n_depth, use_bn),
                 MaybeBatchNorm2d(ndf * 8, True, use_bn),
-                ConvResBlock(ndf * 8, ndf * 8, 3, 1, 0, res_block_depth, use_bn),
-                ConvResBlock(ndf * 8, ndf * 8, 3, 1, 0, res_block_depth, use_bn),
+                ConvResBlock(ndf * 8, ndf * 8, 3, 1, 0, n_depth, use_bn),
+                ConvResBlock(ndf * 8, ndf * 8, 3, 1, 0, n_depth, use_bn),
                 ConvResNxN(ndf * 8, n_rkhs, 3, 1, 0, use_bn),
                 MaybeBatchNorm2d(n_rkhs, True, True)
             ])
@@ -168,14 +168,14 @@ class Evaluator(nn.Module):
 
 class Model(nn.Module):
     def __init__(self, ndf, n_classes, n_rkhs, tclip=20.,
-                 res_block_depth=3, encoder_size=32, use_bn=False):
+                 n_depth=3, encoder_size=32, use_bn=False):
         super(Model, self).__init__()
         self.hyperparams = {
             'ndf': ndf,
             'n_classes': n_classes,
             'n_rkhs': n_rkhs,
             'tclip': tclip, 
-            'res_block_depth': res_block_depth,
+            'n_depth': n_depth,
             'encoder_size': encoder_size,
             'use_bn': use_bn
         }
@@ -186,7 +186,7 @@ class Model(nn.Module):
 
         # encoder that provides multiscale features
         self.encoder = Encoder(dummy_batch, num_channels=3, ndf=ndf, 
-                               n_rkhs=n_rkhs, res_block_depth=res_block_depth,
+                               n_rkhs=n_rkhs, n_depth=n_depth,
                                encoder_size=encoder_size, use_bn=use_bn)
         rkhs_1, rkhs_5, _ = self.encoder(dummy_batch)
         # convert for multi-gpu use
