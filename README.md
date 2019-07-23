@@ -24,7 +24,7 @@ CPC - huge [2]          | 61.0            | n/a
 
 ## Pre-trained Models
 
-Two pre-trained models are available two download:
+Two pre-trained models are available to download:
 
 #### AMDIM-Medium (~430M parameters)
 [amdim_ndf256_rkhs2048_rd10.pth]()   
