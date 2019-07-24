@@ -69,8 +69,11 @@ def initialize(model, optimizers):
     """
     if is_mixed_precision():
         from apex import amp
-        model, optimizers = \
-            amp.initialize(model, optimizers, opt_level=get_optim_level())
+        if optimizers is not None:
+            model, optimizers = \
+                amp.initialize(model, optimizers, opt_level=get_optim_level())
+        else:
+            model = amp.initialize(model, opt_level=get_optim_level())
     return model, optimizers
 
 

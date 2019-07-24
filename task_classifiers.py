@@ -15,7 +15,7 @@ from datasets import Dataset
 from costs import loss_xent
 
 
-def _train(model, optimizer, scheduler, epochs, train_loader,
+def _train(model, optimizer, scheduler, checkpointer, epochs, train_loader,
            test_loader, stat_tracker, log_dir, device):
     '''
     Training loop to train classifiers on top of an encoder with fixed weights.
@@ -27,7 +27,8 @@ def _train(model, optimizer, scheduler, epochs, train_loader,
     # ...
     time_start = time.time()
     total_updates = 0
-    for epoch in range(epochs):
+    next_epoch, total_updates = checkpointer.get_current_position(classifier=True)
+    for epoch in range(next_epoch, epochs):
         epoch_updates = 0
         epoch_stats = AverageMeterSet()
         for _, ((images1, images2), labels) in enumerate(train_loader):
@@ -67,10 +68,11 @@ def _train(model, optimizer, scheduler, epochs, train_loader,
         print(diag_str)
         sys.stdout.flush()
         stat_tracker.record_stats(epoch_stats.averages(epoch, prefix='eval/'))
+        checkpointer.update(epoch + 1, total_updates, classifier=True)
 
 
 def train_classifiers(model, learning_rate, dataset, train_loader,
-                      test_loader, stat_tracker, checkpoint, log_dir, device):
+                      test_loader, stat_tracker, checkpointer, log_dir, device):
     # retrain the evaluation classifiers using the trained feature encoder
     for mod in model.class_modules:
         # reset params in the evaluation classifiers
@@ -91,5 +93,5 @@ def train_classifiers(model, learning_rate, dataset, train_loader,
         scheduler = MultiStepLR(optimizer, milestones=[7, 12], gamma=0.2)
         epochs = 15
     # retrain the model
-    _train(model, optimizer, scheduler, epochs, train_loader,
+    _train(model, optimizer, scheduler, checkpointer, epochs, train_loader,
            test_loader, stat_tracker, log_dir, device)

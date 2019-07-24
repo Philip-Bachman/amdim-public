@@ -7,11 +7,11 @@ import mixed_precision
 from stats import StatTracker
 from datasets import Dataset, build_dataset, get_dataset, get_encoder_size
 from model import Model
-from checkpoint import Checkpoint
+from checkpoint import Checkpointer
 from task_self_supervised import train_self_supervised
 from task_classifiers import train_classifiers
 
-parser = argparse.ArgumentParser(description='Infomax Representations -- Self-Supervised Training')
+parser = argparse.ArgumentParser(description='Infomax Representations - Training Script')
 # parameters for general training stuff
 parser.add_argument('--dataset', type=str, default='STL10')
 parser.add_argument('--batch_size', type=int, default=200,
@@ -42,7 +42,7 @@ parser.add_argument('--output_dir', type=str, default='./runs',
 parser.add_argument('--input_dir', type=str, default='/mnt/imagenet',
                     help="Input directory for the dataset. Not needed For C10,"
                     " C100 or STL10 as the data will be automatically downloaded.")
-parser.add_argument('--cpt_load_path', type=str, default='abc.xyz',
+parser.add_argument('--cpt_load_path', type=str, default=None,
                     help='path from which to load checkpoint (if available)')
 parser.add_argument('--cpt_name', type=str, default='amdim_cpt.pth',
                     help='name to use for storing checkpoints during training')
@@ -81,21 +81,26 @@ def main():
                       labeled_only=args.classifiers)
 
     torch_device = torch.device('cuda')
-    # create new model with random parameters
-    model = Model(ndf=args.ndf, n_classes=num_classes, n_rkhs=args.n_rkhs,
-                  tclip=args.tclip, n_depth=args.n_depth, enc_size=enc_size,
-                  use_bn=(args.use_bn == 1))
-    model.init_weights(init_scale=1.0)
-    # restore model parameters from a checkpoint if requested
-    checkpoint = Checkpoint(model, args.cpt_load_path, args.output_dir)
+    checkpointer = Checkpointer(args.output_dir)
+    if args.cpt_load_path:
+        model = checkpointer.restore_model_from_checkpoint(
+                    args.cpt_load_path, 
+                    training_classifier=args.classifiers)
+    else:
+        # create new model with random parameters
+        model = Model(ndf=args.ndf, n_classes=num_classes, n_rkhs=args.n_rkhs,
+                    tclip=args.tclip, n_depth=args.n_depth, enc_size=enc_size,
+                    use_bn=(args.use_bn == 1))
+        model.init_weights(init_scale=1.0)
+        checkpointer = track_new_model(model)
+
+
     model = model.to(torch_device)
 
     # select which type of training to do
     task = train_classifiers if args.classifiers else train_self_supervised
-
-    # do the real stuff...
     task(model, args.learning_rate, dataset, train_loader,
-         test_loader, stat_tracker, checkpoint, args.output_dir, torch_device)
+         test_loader, stat_tracker, checkpointer, args.output_dir, torch_device)
 
 
 if __name__ == "__main__":
