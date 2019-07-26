@@ -92,7 +92,7 @@ def main():
                     tclip=args.tclip, n_depth=args.n_depth, enc_size=enc_size,
                     use_bn=(args.use_bn == 1))
         model.init_weights(init_scale=1.0)
-        checkpointer = track_new_model(model)
+        checkpointer.track_new_model(model)
 
 
     model = model.to(torch_device)
