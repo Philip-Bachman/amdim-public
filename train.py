@@ -67,7 +67,7 @@ def main():
 
     # get the dataset
     dataset = get_dataset(args.dataset)
-    enc_size = get_encoder_size(dataset)
+    encoder_size = get_encoder_size(dataset)
 
     # get a helper object for tensorboard logging
     log_dir = os.path.join(args.output_dir, args.run_name)
@@ -89,7 +89,7 @@ def main():
     else:
         # create new model with random parameters
         model = Model(ndf=args.ndf, n_classes=num_classes, n_rkhs=args.n_rkhs,
-                    tclip=args.tclip, n_depth=args.n_depth, enc_size=enc_size,
+                    tclip=args.tclip, n_depth=args.n_depth, encoder_size=encoder_size,
                     use_bn=(args.use_bn == 1))
         model.init_weights(init_scale=1.0)
         checkpointer.track_new_model(model)

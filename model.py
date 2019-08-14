@@ -23,7 +23,7 @@ class Encoder(nn.Module):
         self.dim2layer = None
 
         # encoding block for local features
-        print('Using a {encoder_size}x{encoder_size} encoder'.format(encoder_size=encoder_size))
+        print('Using a {}x{} encoder'.format(encoder_size, encoder_size))
         if encoder_size == 32:
             self.layer_list = nn.ModuleList([
                 Conv3x3(num_channels, ndf, 3, 1, 0, False),
@@ -63,7 +63,7 @@ class Encoder(nn.Module):
             ])
         else:
             raise RuntimeError("Could not build encoder."
-                               "Encoder size {} is not supported".format(enc_size))
+                               "Encoder size {} is not supported".format(encoder_size))
         self._config_modules(dummy_batch, [1, 5, 7], n_rkhs, use_bn)
 
     def init_weights(self, init_scale=1.):

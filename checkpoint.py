@@ -25,7 +25,7 @@ class Checkpointer():
         self.classifier_epoch = ckp['cursor']['classifier_epoch']
         self.classifier_step = ckp['cursor']['classifier_step']
         self.model = Model(ndf=hp['ndf'], n_classes=hp['n_classes'], n_rkhs=hp['n_rkhs'],
-                    n_depth=hp['n_depth'], encoder_size=hp['encoder_size'])
+                           n_depth=hp['n_depth'], encoder_size=hp['encoder_size'])
         skip_classifier = (training_classifier and self.classifier_step == 0)
         if training_classifier and self.classifier_step == 0:
             # If we are beginning the classifier training phase, we want to start
