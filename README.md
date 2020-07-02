@@ -18,7 +18,7 @@ CPC - big [1]           | 48.7            | n/a
 CPC - huge [2]          | 61.0            | n/a
 **AMDIM**               | **68.1**        | **55.0**
 
-> [1]: Results from [Kolesnikov et al. [2019]](https://arxiv.org/abs/1906.00910).<br/>
+> [1]: Results from [Kolesnikov et al. [2019]](https://arxiv.org/abs/1901.09005).<br/>
 > [2]: Results from [Henaff et al. [2019]](https://arxiv.org/abs/1905.09272).<br/>
 
 
